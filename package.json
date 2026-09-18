@@ -1,0 +1,19 @@
+{
+  "name": "jev-claw",
+  "version": "1.0.0",
+  "description": "Typed model-routing for OpenClaw agents, powered by TypeSafe Jev",
+  "type": "module",
+  "license": "MIT",
+  "keywords": ["openclaw", "openclaw-plugin", "typesafe", "jev", "llm-routing", "agents"],
+  "files": ["index.js", "route.js", "openclaw.plugin.json", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "eval": "node examples/sample-tasks.mjs"
+  },
+  "dependencies": { "typebox": "1.3.18" },
+  "peerDependencies": { "openclaw": ">=2026.9.0" },
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "compat": { "pluginApi": ">=2026.9.0", "minGatewayVersion": "2026.9.0" }
+  }
+}

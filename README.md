@@ -88,8 +88,7 @@ and test your fork with no API key.
 ## Install
 
 ```bash
-npm pack                       # or clone this repo
-openclaw plugins install npm-pack:/tmp/jev-claw-1.0.0.tgz --accept-capabilities
+openclaw plugins install clawhub:trietphan/jev-claw --accept-capabilities
 openclaw gateway restart
 ```
 

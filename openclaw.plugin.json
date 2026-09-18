@@ -2,8 +2,19 @@
   "id": "jev-claw",
   "name": "Jev Claw",
   "description": "Typed model-routing decisions (task type, complexity, risk, route) from TypeSafe Jev",
-  "categories": ["tools"],
-  "contracts": { "tools": ["jev_route"] },
-  "activation": { "onStartup": true },
-  "configSchema": { "type": "object", "additionalProperties": false }
+  "categories": [
+    "agent-orchestration"
+  ],
+  "contracts": {
+    "tools": [
+      "jev_route"
+    ]
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false
+  }
 }

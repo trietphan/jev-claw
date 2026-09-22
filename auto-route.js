@@ -56,21 +56,28 @@ export function deriveRoutingSignals(prompt) {
   if (typeof prompt !== "string") return {};
   const lower = prompt.toLowerCase();
   const numberPattern = "\\d+|one|two|three|four|five|six|seven|eight|nine|ten|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười";
+  const attemptNoun = "(?:failed\\s+)?(?:debugger\\s+)?(?:attempts?|rounds?|tries|times?|lần|lượt)";
   const attemptMatch = lower.match(
-    new RegExp(`(?:after|sau|tried|thử(?:\\s+qua)?|attempt(?:ed)?|rounds?|lần)\\D{0,18}(${numberPattern})|(${numberPattern})\\s+(?:failed\\s+)?(?:attempts?|rounds?|tries|lần)`, "iu"),
+    new RegExp(
+      `(?:after|sau)\\s+(${numberPattern})\\s+${attemptNoun}|(?:tried|attempted|thử(?:\\s+qua)?)\\s+(${numberPattern})(?:\\s+(?:times?|lần|lượt))?|(${numberPattern})\\s+${attemptNoun}`,
+      "iu",
+    ),
   );
-  const rawAttempts = attemptMatch?.[1] ?? attemptMatch?.[2];
+  const rawAttempts = attemptMatch?.[1] ?? attemptMatch?.[2] ?? attemptMatch?.[3];
   const previousAttempts = rawAttempts
     ? (/^\d+$/.test(rawAttempts) ? Number(rawAttempts) : NUMBER_WORDS.get(rawAttempts))
     : undefined;
 
   let testStatus;
-  if (/\b(tests?|checks?|suite)\b.{0,24}\b(pass(?:ing|ed)?|green)\b|\b(pass(?:ing|ed)?|green)\b.{0,24}\b(tests?|checks?|suite)\b/i.test(lower)) {
-    testStatus = "passing";
-  } else if (
-    /\b(tests?|checks?|suite)\b.{0,28}\b(fail(?:ing|ed|s)?|red|error)\b|\b(fail(?:ing|ed|s)?|red)\b.{0,28}\b(tests?|checks?|suite)\b|kiểm thử.{0,24}(lỗi|thất bại)/iu.test(lower)
-  ) {
-    testStatus = "failing";
+  let latestStatusIndex = -1;
+  const statusPattern = /pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red|error|lỗi|thất bại/giu;
+  for (const match of lower.matchAll(statusPattern)) {
+    const start = Math.max(0, match.index - 40);
+    const end = Math.min(lower.length, match.index + match[0].length + 40);
+    if (!/\b(tests?|checks?|suite)\b|kiểm thử/iu.test(lower.slice(start, end))) continue;
+    if (match.index < latestStatusIndex) continue;
+    latestStatusIndex = match.index;
+    testStatus = /^(?:pass|green)/i.test(match[0]) ? "passing" : "failing";
   }
   return {
     ...(Number.isInteger(previousAttempts) ? { previous_attempts: previousAttempts } : {}),

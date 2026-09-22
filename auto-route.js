@@ -4,7 +4,7 @@ import { jevRoute } from "./route.js";
 export const AUTO_ROUTE_NAMESPACE = "automatic-routing";
 
 const SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test|build|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|deploy|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|agent|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|build|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|deploy|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|agent|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const ENGINEERING_ACTION =
   /\b(implement|fix|debug|refactor|build|add|change|update|migrate|review|audit|test|deploy|integrate|optimi[sz]e|remove|upgrade|patch|design|architect|route|spawn|delegate|triage|sửa|xây dựng|thêm|thay đổi|cập nhật|nâng cấp|kiểm tra|đánh giá|thiết kế|tích hợp|tối ưu|giao việc|ủy quyền)\b/i;
 const DETERMINISTIC_ONLY =
@@ -70,7 +70,7 @@ export function deriveRoutingSignals(prompt) {
 
   let testStatus;
   let latestStatusIndex = -1;
-  const statusPattern = /pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red|error|lỗi|thất bại/giu;
+  const statusPattern = /\b(?:pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red|error)\b|lỗi|thất bại/giu;
   for (const match of lower.matchAll(statusPattern)) {
     const start = Math.max(0, match.index - 40);
     const end = Math.min(lower.length, match.index + match[0].length + 40);

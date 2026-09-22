@@ -41,6 +41,8 @@ const decision = (overrides = {}) => ({
 
 test("prefilter routes meaningful engineering work and skips casual/deterministic/writing turns", () => {
   assert.equal(shouldAutoRoute("Implement a TypeScript API endpoint and add tests"), true);
+  assert.equal(shouldAutoRoute("Fix these failing tests"), true);
+  assert.equal(shouldAutoRoute("Implement unit testing for checkout"), true);
   assert.equal(shouldAutoRoute("Sửa lỗi authentication trong code và chạy kiểm thử"), true);
   assert.equal(shouldAutoRoute("hello"), false);
   assert.equal(shouldAutoRoute("Explain what TypeScript is"), false);
@@ -67,6 +69,11 @@ test("debugging history is derived for the deterministic escalation policy", () 
     deriveRoutingSignals("Debug the API after 4 PM; tests are failing"),
     { test_status: "failing" },
     "times of day must not become attempt counts",
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug the API after four attempts; I refactored the tests without running them"),
+    { previous_attempts: 4 },
+    "outcome words must be standalone, not substrings such as refactored",
   );
   assert.deepEqual(
     deriveRoutingSignals("Debug the API: tests passed before but are now failing after five attempts"),

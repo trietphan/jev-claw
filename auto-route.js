@@ -56,7 +56,7 @@ export function deriveRoutingSignals(prompt) {
   if (typeof prompt !== "string") return {};
   const lower = prompt.toLowerCase();
   const numberPattern = "\\d+|one|two|three|four|five|six|seven|eight|nine|ten|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười";
-  const attemptNoun = "(?:failed\\s+)?(?:debugger\\s+)?(?:attempts?|rounds?|tries|times?|lần|lượt)";
+  const attemptNoun = "(?:failed\\s+)?(?:debugger\\s+)?(?:attempts?|rounds?|tries|lần|lượt)";
   const attemptPattern = new RegExp(
     `(?:after|sau)\\s+(${numberPattern})\\s+${attemptNoun}|(?:tried|attempted|thử(?:\\s+qua)?)\\s+(${numberPattern})(?:\\s+(?:times?|lần|lượt))?|(${numberPattern})\\s+${attemptNoun}`,
     "giu",
@@ -69,17 +69,36 @@ export function deriveRoutingSignals(prompt) {
 
   let testStatus;
   let latestStatusIndex = -1;
-  // Generic `error` is deliberately excluded: "tests pass, but the API error remains" is passing evidence.
-  const statusPattern = /\b(?:pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red)\b|lỗi|thất bại/giu;
-  for (const match of lower.matchAll(statusPattern)) {
-    const start = Math.max(0, match.index - 40);
-    const end = Math.min(lower.length, match.index + match[0].length + 40);
-    if (!/\b(tests?|checks?|suite)\b|kiểm thử/iu.test(lower.slice(start, end))) continue;
-    const prefix = lower.slice(Math.max(0, match.index - 24), match.index);
-    if (/(?:\bnot|\bno longer|\bisn['’]?t|\baren['’]?t|\bwasn['’]?t|\bweren['’]?t|\bwithout|không|chưa)\s*(?:currently\s+|still\s+)?$/iu.test(prefix)) continue;
-    if (match.index < latestStatusIndex) continue;
-    latestStatusIndex = match.index;
-    testStatus = /^(?:pass|green)/i.test(match[0]) ? "passing" : "failing";
+  const statusWord = "pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red";
+  const negation = "not|no longer|isn['’]?t|aren['’]?t|wasn['’]?t|weren['’]?t|without";
+  const recordStatus = (raw, index, isNegated = false) => {
+    if (isNegated || index < latestStatusIndex) return;
+    latestStatusIndex = index;
+    testStatus = /^(?:pass|green)/i.test(raw) ? "passing" : "failing";
+  };
+
+  // Only accept grammatical test outcomes, never a status word that merely appears nearby.
+  const afterTest = new RegExp(
+    `\\b(?:tests?|checks?|suite)\\b\\s*(?:(?:are|is|were|was|have|has|still|now|currently|remain(?:s|ed)?|keep(?:s)?|:|-)\\s*)*(?:(${negation})\\s*)?(${statusWord})\\b`,
+    "giu",
+  );
+  for (const match of lower.matchAll(afterTest)) {
+    recordStatus(match[2], match.index + match[0].lastIndexOf(match[2]), Boolean(match[1]));
+  }
+  const beforeTest = new RegExp(`\\b(${statusWord})\\b\\s+\\b(?:tests?|checks?|suite)\\b`, "giu");
+  for (const match of lower.matchAll(beforeTest)) {
+    const prefix = lower.slice(Math.max(0, match.index - 16), match.index);
+    recordStatus(match[1], match.index, new RegExp(`(?:${negation})\\s*$`, "iu").test(prefix));
+  }
+  if (/\b(?:tests?|checks?|suite)\b/iu.test(lower)) {
+    const continued = new RegExp(`\\b(?:but|and)\\s+(?:(?:are|is|were|was|now|currently|still)\\s*)+(?:(${negation})\\s*)?(${statusWord})\\b`, "giu");
+    for (const match of lower.matchAll(continued)) {
+      recordStatus(match[2], match.index + match[0].lastIndexOf(match[2]), Boolean(match[1]));
+    }
+  }
+  const vietnamese = /kiểm thử\s*(?:đang|vẫn|đã)?\s*(?:(không|chưa)\s*)?(đạt|thành công|lỗi|thất bại)/giu;
+  for (const match of lower.matchAll(vietnamese)) {
+    recordStatus(match[2], match.index + match[0].lastIndexOf(match[2]), Boolean(match[1]));
   }
   return {
     ...(Number.isInteger(previousAttempts) ? { previous_attempts: previousAttempts } : {}),

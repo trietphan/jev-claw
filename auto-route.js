@@ -57,20 +57,20 @@ export function deriveRoutingSignals(prompt) {
   const lower = prompt.toLowerCase();
   const numberPattern = "\\d+|one|two|three|four|five|six|seven|eight|nine|ten|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười";
   const attemptNoun = "(?:failed\\s+)?(?:debugger\\s+)?(?:attempts?|rounds?|tries|times?|lần|lượt)";
-  const attemptMatch = lower.match(
-    new RegExp(
-      `(?:after|sau)\\s+(${numberPattern})\\s+${attemptNoun}|(?:tried|attempted|thử(?:\\s+qua)?)\\s+(${numberPattern})(?:\\s+(?:times?|lần|lượt))?|(${numberPattern})\\s+${attemptNoun}`,
-      "iu",
-    ),
+  const attemptPattern = new RegExp(
+    `(?:after|sau)\\s+(${numberPattern})\\s+${attemptNoun}|(?:tried|attempted|thử(?:\\s+qua)?)\\s+(${numberPattern})(?:\\s+(?:times?|lần|lượt))?|(${numberPattern})\\s+${attemptNoun}`,
+    "giu",
   );
-  const rawAttempts = attemptMatch?.[1] ?? attemptMatch?.[2] ?? attemptMatch?.[3];
-  const previousAttempts = rawAttempts
-    ? (/^\d+$/.test(rawAttempts) ? Number(rawAttempts) : NUMBER_WORDS.get(rawAttempts))
-    : undefined;
+  let previousAttempts;
+  for (const match of lower.matchAll(attemptPattern)) {
+    const raw = match[1] ?? match[2] ?? match[3];
+    previousAttempts = /^\d+$/.test(raw) ? Number(raw) : NUMBER_WORDS.get(raw);
+  }
 
   let testStatus;
   let latestStatusIndex = -1;
-  const statusPattern = /\b(?:pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red|error)\b|lỗi|thất bại/giu;
+  // Generic `error` is deliberately excluded: "tests pass, but the API error remains" is passing evidence.
+  const statusPattern = /\b(?:pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red)\b|lỗi|thất bại/giu;
   for (const match of lower.matchAll(statusPattern)) {
     const start = Math.max(0, match.index - 40);
     const end = Math.min(lower.length, match.index + match[0].length + 40);

@@ -241,13 +241,18 @@ Restart the Gateway after changing plugin configuration.
 - `guidance` (recommended first): injects the typed decision into host policy context. It never
   blocks a tool call.
 - `enforce`: also blocks a `sessions_spawn` call that explicitly chooses a different `agentId`,
-  but only when the Jev decision meets `minConfidence`. Missing, timed-out, failed, fallback and
+  but only when the Jev decision meets `minConfidence`. Both the primary route and its recommended
+  independent second-opinion route are allowed. Missing, timed-out, failed, fallback and
   low-confidence decisions fail open.
 
 The hook never runs for obvious greetings, writing-only requests, simple status/read/run commands,
 or prompts without both an engineering action and software context. The prefilter is intentionally
 conservative: false negatives cost one manual `jev_route` call; false positives send unrelated
 conversation text to an external service.
+
+For debugging prompts, the hook deterministically extracts explicit attempt counts and passing/
+failing test signals (for example, “after five failed attempts; tests still failing”) so the normal
+debugger → critic → frontier escalation policy remains available. It does not invent missing history.
 
 ### Safety and privacy
 

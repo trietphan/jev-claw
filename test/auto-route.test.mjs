@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   AUTO_ROUTE_NAMESPACE,
   createAutomaticRouter,
+  deriveRoutingSignals,
   normalizeAutoRouteConfig,
   shouldAutoRoute,
 } from "../auto-route.js";
@@ -45,6 +46,30 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Explain what TypeScript is"), false);
   assert.equal(shouldAutoRoute("Run the existing tests"), false);
   assert.equal(shouldAutoRoute("Write a launch announcement"), false);
+});
+
+test("debugging history is derived for the deterministic escalation policy", () => {
+  assert.deepEqual(
+    deriveRoutingSignals("Debug the websocket bug after five failed attempts; tests are still failing"),
+    { previous_attempts: 5, test_status: "failing" },
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Sửa lỗi API sau 2 lần thử; kiểm thử vẫn thất bại"),
+    { previous_attempts: 2, test_status: "failing" },
+  );
+  assert.deepEqual(deriveRoutingSignals("Debug the API; tests are green"), { test_status: "passing" });
+});
+
+test("automatic routing passes derived debugging signals to Jev policy", async () => {
+  let input;
+  const { router } = harness(async (value) => { input = value; return decision({ route: "frontier" }); });
+  await router.beforePromptBuild(
+    { prompt: "Debug the websocket bug after five failed attempts; tests are still failing", messages: [] },
+    { runId: "debug-history" },
+    config,
+  );
+  assert.equal(input.previous_attempts, 5);
+  assert.equal(input.test_status, "failing");
 });
 
 test("qualifying prompt is routed once and stored in run context", async () => {
@@ -116,10 +141,34 @@ test("enforce mode permits matching delegation and blocks only confident mismatc
     config,
   );
   assert.equal(blocked.block, true);
-  assert.match(blocked.blockReason, /requires agentId=debugger/);
+  assert.match(blocked.blockReason, /allows agentId=debugger/);
   assert.equal(
     router.beforeToolCall(
       { toolName: "exec", runId: "run-4", params: {} },
+      ctx,
+      config,
+    ),
+    undefined,
+  );
+});
+
+test("enforce mode permits the recommended independent second opinion", async () => {
+  const { router } = harness(async () => decision({
+    route: "architect",
+    risk: "high",
+    second_opinion_route: "claude-critic",
+    needs_second_opinion: true,
+    confidence: 0.91,
+  }));
+  const ctx = { runId: "run-second-opinion" };
+  await router.beforePromptBuild(
+    { prompt: "Design the database migration architecture for the repository", messages: [] },
+    ctx,
+    config,
+  );
+  assert.equal(
+    router.beforeToolCall(
+      { toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "claude-critic" } },
       ctx,
       config,
     ),

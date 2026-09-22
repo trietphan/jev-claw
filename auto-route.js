@@ -24,6 +24,12 @@ const ROUTES = new Set([
   "frontier",
 ]);
 const MAX_CACHE_ENTRIES = 256;
+const NUMBER_WORDS = new Map([
+  ["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5], ["six", 6],
+  ["seven", 7], ["eight", 8], ["nine", 9], ["ten", 10],
+  ["một", 1], ["hai", 2], ["ba", 3], ["bốn", 4], ["năm", 5], ["sáu", 6],
+  ["bảy", 7], ["tám", 8], ["chín", 9], ["mười", 10],
+]);
 
 export function normalizeAutoRouteConfig(pluginConfig = {}) {
   const raw = pluginConfig.autoRoute && typeof pluginConfig.autoRoute === "object" ? pluginConfig.autoRoute : {};
@@ -44,6 +50,32 @@ export function shouldAutoRoute(prompt) {
   if (DETERMINISTIC_ONLY.test(text) && !ENGINEERING_ACTION.test(text.replace(DETERMINISTIC_ONLY, ""))) return false;
   if (WRITING_ONLY.test(text) && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   return ENGINEERING_ACTION.test(text) && SOFTWARE_CONTEXT.test(text);
+}
+
+export function deriveRoutingSignals(prompt) {
+  if (typeof prompt !== "string") return {};
+  const lower = prompt.toLowerCase();
+  const numberPattern = "\\d+|one|two|three|four|five|six|seven|eight|nine|ten|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười";
+  const attemptMatch = lower.match(
+    new RegExp(`(?:after|sau|tried|thử(?:\\s+qua)?|attempt(?:ed)?|rounds?|lần)\\D{0,18}(${numberPattern})|(${numberPattern})\\s+(?:failed\\s+)?(?:attempts?|rounds?|tries|lần)`, "iu"),
+  );
+  const rawAttempts = attemptMatch?.[1] ?? attemptMatch?.[2];
+  const previousAttempts = rawAttempts
+    ? (/^\d+$/.test(rawAttempts) ? Number(rawAttempts) : NUMBER_WORDS.get(rawAttempts))
+    : undefined;
+
+  let testStatus;
+  if (/\b(tests?|checks?|suite)\b.{0,24}\b(pass(?:ing|ed)?|green)\b|\b(pass(?:ing|ed)?|green)\b.{0,24}\b(tests?|checks?|suite)\b/i.test(lower)) {
+    testStatus = "passing";
+  } else if (
+    /\b(tests?|checks?|suite)\b.{0,28}\b(fail(?:ing|ed|s)?|red|error)\b|\b(fail(?:ing|ed|s)?|red)\b.{0,28}\b(tests?|checks?|suite)\b|kiểm thử.{0,24}(lỗi|thất bại)/iu.test(lower)
+  ) {
+    testStatus = "failing";
+  }
+  return {
+    ...(Number.isInteger(previousAttempts) ? { previous_attempts: previousAttempts } : {}),
+    ...(testStatus ? { test_status: testStatus } : {}),
+  };
 }
 
 function promptKey(prompt) {
@@ -111,7 +143,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       try {
         decision = {
           ...(await routeTask(
-            { task: event.prompt },
+            { task: event.prompt, ...deriveRoutingSignals(event.prompt) },
             { timeoutMs: config.timeoutMs },
           )),
           source: "jev",
@@ -134,10 +166,11 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
     // Missing, fallback, or uncertain decisions fail open. The prompt note still guides the model.
     if (!decision || decision.source !== "jev" || decision.confidence < config.minConfidence) return;
     const requestedAgent = typeof event.params.agentId === "string" ? event.params.agentId : undefined;
-    if (!requestedAgent || requestedAgent === decision.route) return;
+    const allowedAgents = new Set([decision.route, decision.second_opinion_route].filter(Boolean));
+    if (!requestedAgent || allowedAgents.has(requestedAgent)) return;
     return {
       block: true,
-      blockReason: `jev-claw routing policy requires agentId=${decision.route}; requested=${requestedAgent}`,
+      blockReason: `jev-claw routing policy allows agentId=${[...allowedAgents].join(" or ")}; requested=${requestedAgent}`,
     };
   }
 

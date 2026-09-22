@@ -85,12 +85,12 @@ export function deriveRoutingSignals(prompt) {
   for (const match of lower.matchAll(afterTest)) {
     recordStatus(match[2], match.index + match[0].lastIndexOf(match[2]), Boolean(match[1]));
   }
-  const beforeTest = new RegExp(`\\b(${statusWord})\\b\\s+\\b(?:tests?|checks?|suite)\\b`, "giu");
+  const beforeTest = new RegExp(`\\b(${statusWord})\\b\\s+(?:(?:unit|integration|regression|e2e|end-to-end|smoke|acceptance|system|frontend|backend)\\s+){0,2}\\b(?:tests?|checks?|suite)\\b`, "giu");
   for (const match of lower.matchAll(beforeTest)) {
     const prefix = lower.slice(Math.max(0, match.index - 16), match.index);
     recordStatus(match[1], match.index, new RegExp(`(?:${negation})\\s*$`, "iu").test(prefix));
   }
-  if (/\b(?:tests?|checks?|suite)\b/iu.test(lower)) {
+  if (latestStatusIndex >= 0) {
     const continued = new RegExp(`\\b(?:but|and)\\s+(?:(?:are|is|were|was|now|currently|still)\\s*)+(?:(${negation})\\s*)?(${statusWord})\\b`, "giu");
     for (const match of lower.matchAll(continued)) {
       recordStatus(match[2], match.index + match[0].lastIndexOf(match[2]), Boolean(match[1]));

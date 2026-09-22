@@ -114,6 +114,19 @@ test("debugging history is derived for the deterministic escalation policy", () 
     { test_status: "failing" },
     "event frequency must not become an attempt count",
   );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug after five attempts; deployment passed but is now failing; check test logs"),
+    { previous_attempts: 5 },
+    "continued outcomes must belong to an established test-outcome clause",
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug after five attempts; failing unit tests remain"),
+    { previous_attempts: 5, test_status: "failing" },
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug after five attempts; failed integration tests remain"),
+    { previous_attempts: 5, test_status: "failing" },
+  );
 });
 
 test("automatic routing passes derived debugging signals to Jev policy", async () => {

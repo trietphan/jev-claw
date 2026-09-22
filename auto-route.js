@@ -23,6 +23,7 @@ const ROUTES = new Set([
   "claude-critic",
   "frontier",
 ]);
+const MAX_CACHE_ENTRIES = 256;
 
 export function normalizeAutoRouteConfig(pluginConfig = {}) {
   const raw = pluginConfig.autoRoute && typeof pluginConfig.autoRoute === "object" ? pluginConfig.autoRoute : {};
@@ -86,6 +87,16 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
     if (runId) api.runContext.setRunContext({ runId, namespace: AUTO_ROUTE_NAMESPACE, value });
   }
 
+  function cacheDecision(key, decision, expiresAt) {
+    const currentTime = now();
+    for (const [candidate, entry] of cache) {
+      if (entry.expiresAt <= currentTime) cache.delete(candidate);
+    }
+    cache.delete(key);
+    cache.set(key, { decision, expiresAt });
+    while (cache.size > MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value);
+  }
+
   async function beforePromptBuild(event, ctx, config) {
     if (!config.enabled || !shouldAutoRoute(event.prompt)) return;
     const existing = readRunDecision(ctx.runId);
@@ -110,7 +121,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
         decision = fallbackDecision(config.fallbackRoute, category);
         api.logger.warn?.(`jev-claw automatic routing used ${category}; prompt=${key}`);
       }
-      cache.set(key, { decision, expiresAt: now() + config.cacheTtlMs });
+      cacheDecision(key, decision, now() + config.cacheTtlMs);
     }
     writeRunDecision(ctx.runId, { decision, promptKey: key, createdAt: now() });
     return { appendSystemContext: routingContext(decision) };

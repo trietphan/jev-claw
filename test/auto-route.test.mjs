@@ -164,6 +164,31 @@ test("cache avoids duplicate Jev calls across prompt rebuilds without storing ra
   assert.equal(calls, 2);
 });
 
+test("cache remains bounded across many unique engineering prompts", async () => {
+  let calls = 0;
+  const api = {
+    runContext: { setRunContext: () => true, getRunContext: () => undefined },
+    logger: { warn() {} },
+  };
+  const router = createAutomaticRouter({
+    api,
+    routeTask: async () => { calls += 1; return decision(); },
+  });
+  for (let i = 0; i < 300; i += 1) {
+    await router.beforePromptBuild(
+      { prompt: `Implement TypeScript API endpoint ${i} in the codebase and add tests`, messages: [] },
+      {},
+      config,
+    );
+  }
+  await router.beforePromptBuild(
+    { prompt: "Implement TypeScript API endpoint 0 in the codebase and add tests", messages: [] },
+    {},
+    config,
+  );
+  assert.equal(calls, 301, "the oldest entry must be evicted after the cache reaches its bound");
+});
+
 test("stored context uses the plugin namespace", async () => {
   const { router, runs } = harness(async () => decision());
   await router.beforePromptBuild(

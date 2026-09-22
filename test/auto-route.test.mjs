@@ -7,6 +7,7 @@ import {
   normalizeAutoRouteConfig,
   shouldAutoRoute,
 } from "../auto-route.js";
+import plugin from "../index.js";
 
 function harness(routeTask) {
   const runs = new Map();
@@ -48,6 +49,25 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Explain what TypeScript is"), false);
   assert.equal(shouldAutoRoute("Run the existing tests"), false);
   assert.equal(shouldAutoRoute("Write a launch announcement"), false);
+  assert.equal(shouldAutoRoute("Build a confidential hiring plan for the team"), false);
+  assert.equal(shouldAutoRoute("Write TypeScript code for an API endpoint"), true);
+  assert.equal(shouldAutoRoute("Write a Python function that parses invoices"), true);
+  assert.equal(shouldAutoRoute("Write API documentation for the endpoint"), false);
+});
+
+test("plugin always declares hook capabilities while disabled handlers remain inert", async () => {
+  const hooks = [];
+  const api = {
+    pluginConfig: {},
+    registerTool() {},
+    on(name, handler, options) { hooks.push({ name, handler, options }); },
+    runContext: { setRunContext() {}, getRunContext() {} },
+    logger: { warn() {} },
+  };
+  plugin.register(api);
+  assert.deepEqual(hooks.map(({ name }) => name), ["before_prompt_build", "before_tool_call"]);
+  assert.equal(await hooks[0].handler({ prompt: "Implement TypeScript code" }, { runId: "off" }), undefined);
+  assert.equal(hooks[1].handler({ toolName: "sessions_spawn", params: { agentId: "cheap" } }, { runId: "off" }), undefined);
 });
 
 test("debugging history is derived for the deterministic escalation policy", () => {
@@ -86,6 +106,15 @@ test("debugging history is derived for the deterministic escalation policy", () 
     "a current passing result suppresses stale failure escalation",
   );
   assert.deepEqual(
+    deriveRoutingSignals("Debug after five attempts; no tests passed"),
+    { previous_attempts: 5, test_status: "failing" },
+    "subject-level negation must turn a passing word into failure evidence",
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug after five attempts; not all tests passed"),
+    { previous_attempts: 5, test_status: "failing" },
+  );
+  assert.deepEqual(
     deriveRoutingSignals("Debug the API after four attempts; tests are not failing anymore"),
     { previous_attempts: 4 },
     "negated outcome words must not trigger escalation",
@@ -118,6 +147,11 @@ test("debugging history is derived for the deterministic escalation policy", () 
     deriveRoutingSignals("Debug after five attempts; deployment passed but is now failing; check test logs"),
     { previous_attempts: 5 },
     "continued outcomes must belong to an established test-outcome clause",
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug after five attempts; tests passed; deployment passed but is now failing"),
+    { previous_attempts: 5, test_status: "passing" },
+    "an unrelated later clause must not overwrite the test outcome",
   );
   assert.deepEqual(
     deriveRoutingSignals("Debug after five attempts; failing unit tests remain"),

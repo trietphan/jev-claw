@@ -40,17 +40,18 @@ export default definePluginEntry({
       },
     });
 
-    if (autoRouteConfig.enabled) {
-      api.on(
-        "before_prompt_build",
-        (event, ctx) => automaticRouter.beforePromptBuild(event, ctx, autoRouteConfig),
-        { timeoutMs: Math.min(15000, autoRouteConfig.timeoutMs + 500) },
-      );
-      api.on(
-        "before_tool_call",
-        (event, ctx) => automaticRouter.beforeToolCall(event, ctx, autoRouteConfig),
-        { matcher: ["sessions_spawn"], priority: 50 },
-      );
-    }
+    // Register the complete capability surface even when auto-routing is off.
+    // The installer discovers accepted hooks with default config; conditionally
+    // registering here would make later opt-in config unable to activate them.
+    api.on(
+      "before_prompt_build",
+      (event, ctx) => automaticRouter.beforePromptBuild(event, ctx, autoRouteConfig),
+      { timeoutMs: Math.min(15000, autoRouteConfig.timeoutMs + 500) },
+    );
+    api.on(
+      "before_tool_call",
+      (event, ctx) => automaticRouter.beforeToolCall(event, ctx, autoRouteConfig),
+      { matcher: ["sessions_spawn"], priority: 50 },
+    );
   },
 });

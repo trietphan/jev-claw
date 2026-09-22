@@ -75,6 +75,8 @@ export function deriveRoutingSignals(prompt) {
     const start = Math.max(0, match.index - 40);
     const end = Math.min(lower.length, match.index + match[0].length + 40);
     if (!/\b(tests?|checks?|suite)\b|kiểm thử/iu.test(lower.slice(start, end))) continue;
+    const prefix = lower.slice(Math.max(0, match.index - 24), match.index);
+    if (/(?:\bnot|\bno longer|\bisn['’]?t|\baren['’]?t|\bwasn['’]?t|\bweren['’]?t|\bwithout|không|chưa)\s*(?:currently\s+|still\s+)?$/iu.test(prefix)) continue;
     if (match.index < latestStatusIndex) continue;
     latestStatusIndex = match.index;
     testStatus = /^(?:pass|green)/i.test(match[0]) ? "passing" : "failing";

@@ -85,6 +85,15 @@ test("debugging history is derived for the deterministic escalation policy", () 
     { previous_attempts: 2, test_status: "passing" },
     "a current passing result suppresses stale failure escalation",
   );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug the API after four attempts; tests are not failing anymore"),
+    { previous_attempts: 4 },
+    "negated outcome words must not trigger escalation",
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug the API after four attempts; tests aren't currently failing"),
+    { previous_attempts: 4 },
+  );
 });
 
 test("automatic routing passes derived debugging signals to Jev policy", async () => {

@@ -53,6 +53,11 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write TypeScript code for an API endpoint"), true);
   assert.equal(shouldAutoRoute("Write a Python function that parses invoices"), true);
   assert.equal(shouldAutoRoute("Write API documentation for the endpoint"), false);
+  assert.equal(shouldAutoRoute("Write Python code with documentation for invoice parsing"), true);
+  assert.equal(shouldAutoRoute("Deploy a confidential hiring plan for the team"), false);
+  assert.equal(shouldAutoRoute("Deploy the API service"), true);
+  assert.equal(shouldAutoRoute("Run npm test in the repo"), false);
+  assert.equal(shouldAutoRoute("Run npm test and fix failures in the repo"), true);
 });
 
 test("plugin always declares hook capabilities while disabled handlers remain inert", async () => {
@@ -115,6 +120,10 @@ test("debugging history is derived for the deterministic escalation policy", () 
     { previous_attempts: 5, test_status: "failing" },
   );
   assert.deepEqual(
+    deriveRoutingSignals("Debug API sau năm lần; kiểm thử đã đạt"),
+    { previous_attempts: 5, test_status: "passing" },
+  );
+  assert.deepEqual(
     deriveRoutingSignals("Debug the API after four attempts; tests are not failing anymore"),
     { previous_attempts: 4 },
     "negated outcome words must not trigger escalation",
@@ -152,6 +161,11 @@ test("debugging history is derived for the deterministic escalation policy", () 
     deriveRoutingSignals("Debug after five attempts; tests passed; deployment passed but is now failing"),
     { previous_attempts: 5, test_status: "passing" },
     "an unrelated later clause must not overwrite the test outcome",
+  );
+  assert.deepEqual(
+    deriveRoutingSignals("Debug the API; tests are now failing, though tests passed yesterday after five attempts"),
+    { previous_attempts: 5, test_status: "failing" },
+    "an explicitly current result must outrank a later historical clause",
   );
   assert.deepEqual(
     deriveRoutingSignals("Debug after five attempts; failing unit tests remain"),

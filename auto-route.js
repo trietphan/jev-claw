@@ -4,9 +4,9 @@ import { jevRoute } from "./route.js";
 export const AUTO_ROUTE_NAMESPACE = "automatic-routing";
 
 const SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|deploy|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|service|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const DISTINCT_SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|deploy|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|service|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const ENGINEERING_ACTION =
   /\b(implement|fix|debug|refactor|build|add|change|update|migrate|review|audit|test|deploy|integrate|optimi[sz]e|remove|upgrade|patch|design|architect|route|spawn|delegate|triage|sửa|xây dựng|thêm|thay đổi|cập nhật|nâng cấp|kiểm tra|đánh giá|thiết kế|tích hợp|tối ưu|giao việc|ủy quyền)\b/i;
 const DETERMINISTIC_ONLY =
@@ -14,7 +14,7 @@ const DETERMINISTIC_ONLY =
 const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
-  /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)(?!.*\b(documentation|docs?|readme|guide|announcement|copy|blog|article|tài liệu|hướng dẫn|thông báo|bài viết)\b)/i;
+  /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([
@@ -51,7 +51,14 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
-  if (DETERMINISTIC_ONLY.test(text) && !ENGINEERING_ACTION.test(text.replace(DETERMINISTIC_ONLY, ""))) return false;
+  if (DETERMINISTIC_ONLY.test(text)) {
+    const remainder = text.replace(DETERMINISTIC_ONLY, "");
+    const withoutBareTestCommand = remainder.replace(
+      /\b(?:(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?)?test(?:s|ing)?\b/gi,
+      "",
+    );
+    if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
+  }
   const codeGeneration = CODE_GENERATION.test(text);
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
@@ -76,16 +83,24 @@ export function deriveRoutingSignals(prompt) {
 
   let testStatus;
   let latestStatusIndex = -1;
+  let latestStatusPriority = -1;
   const statusWord = "pass(?:ing|ed)?|green|fail(?:ing|ed|s)?|red";
   const negation = "not|no longer|isn['’]?t|aren['’]?t|wasn['’]?t|weren['’]?t|without";
-  const recordStatus = (raw, index, isNegated = false) => {
-    if (index < latestStatusIndex) return;
-    const passing = /^(?:pass|green)/i.test(raw);
+  const recordStatus = (raw, index, isNegated = false, priority = 1) => {
+    if (priority < latestStatusPriority || (priority === latestStatusPriority && index < latestStatusIndex)) return;
+    const passing = /^(?:pass(?:ing|ed)?|green|đạt|thành công)$/iu.test(raw);
     // "No tests passed" is affirmative failure evidence. A negated failure
     // ("tests are not failing") is inconclusive rather than proof of passing.
     if (isNegated && !passing) return;
     latestStatusIndex = index;
+    latestStatusPriority = priority;
     testStatus = passing && !isNegated ? "passing" : "failing";
+  };
+
+  const statusPriority = (fullMatch, endIndex) => {
+    if (/\b(now|currently|still)\b/i.test(fullMatch)) return 2;
+    if (/^\s*(?:yesterday|before|earlier|previously)\b/i.test(lower.slice(endIndex))) return 0;
+    return 1;
   };
 
   const recordImmediateContinuation = (endIndex) => {
@@ -94,7 +109,12 @@ export function deriveRoutingSignals(prompt) {
       new RegExp(`^\\s*(?:(?:before|earlier|previously)\\s*)?(?:[,;]\\s*)?(?:but|and)\\s+(?:(?:are|is|were|was|now|currently|still)\\s*)+(?:(${negation})\\s*)?(${statusWord})\\b`, "iu"),
     );
     if (!match) return;
-    recordStatus(match[2], endIndex + match.index + match[0].lastIndexOf(match[2]), Boolean(match[1]));
+    recordStatus(
+      match[2],
+      endIndex + match.index + match[0].lastIndexOf(match[2]),
+      Boolean(match[1]),
+      statusPriority(match[0], endIndex + match.index + match[0].length),
+    );
   };
 
   // Only accept grammatical test outcomes, never a status word that merely appears nearby.
@@ -103,13 +123,23 @@ export function deriveRoutingSignals(prompt) {
     "giu",
   );
   for (const match of lower.matchAll(afterTest)) {
-    recordStatus(match[4], match.index + match[0].lastIndexOf(match[4]), Boolean(match[1] || match[2] || match[3]));
+    recordStatus(
+      match[4],
+      match.index + match[0].lastIndexOf(match[4]),
+      Boolean(match[1] || match[2] || match[3]),
+      statusPriority(match[0], match.index + match[0].length),
+    );
     recordImmediateContinuation(match.index + match[0].length);
   }
   const beforeTest = new RegExp(`\\b(${statusWord})\\b\\s+(?:(?:unit|integration|regression|e2e|end-to-end|smoke|acceptance|system|frontend|backend)\\s+){0,2}\\b(?:tests?|checks?|suite)\\b`, "giu");
   for (const match of lower.matchAll(beforeTest)) {
     const prefix = lower.slice(Math.max(0, match.index - 16), match.index);
-    recordStatus(match[1], match.index, new RegExp(`(?:${negation})\\s*$`, "iu").test(prefix));
+    recordStatus(
+      match[1],
+      match.index,
+      new RegExp(`(?:${negation})\\s*$`, "iu").test(prefix),
+      statusPriority(match[0], match.index + match[0].length),
+    );
     recordImmediateContinuation(match.index + match[0].length);
   }
   const vietnamese = /kiểm thử\s*(?:đang|vẫn|đã)?\s*(?:(không|chưa)\s*)?(đạt|thành công|lỗi|thất bại)/giu;

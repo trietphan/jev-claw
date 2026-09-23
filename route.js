@@ -55,12 +55,14 @@ const QUESTIONS = {
   },
 };
 
-async function askJev(state) {
-  const res = await fetch(ENDPOINT, {
+export async function askJev(state, { fetchImpl = fetch, timeoutMs = 20000, signal } = {}) {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const requestSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+  const res = await fetchImpl(ENDPOINT, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey()}`, "Content-Type": "application/json" },
     body: JSON.stringify({ state, model: "jev-latest", questions: QUESTIONS }),
-    signal: AbortSignal.timeout(20000),
+    signal: requestSignal,
   });
   const body = await res.text();
   if (!res.ok) throw new Error(`TypeSafe HTTP ${res.status}: ${body.slice(0, 300)}`);
@@ -122,9 +124,12 @@ export function decide({ task_type, complexity, risk, second_opinion, previous_a
   return { route, second_opinion_route: second, needs_second_opinion: second !== null, reasons };
 }
 
-export async function jevRoute({ task, changed_files = [], diff_summary, previous_attempts = 0, test_status }) {
+export async function jevRoute(
+  { task, changed_files = [], diff_summary, previous_attempts = 0, test_status },
+  { ask = askJev, timeoutMs, signal } = {},
+) {
   const state = { task, changed_files, diff_summary, previous_attempts, test_status };
-  const a = await askJev(state);
+  const a = await ask(state, { timeoutMs, signal });
   let risk = a.risk.choice;
   const hits = changed_files.filter((f) => SENSITIVE_PATH.test(f));
   const riskFloor = hits.length > 0 && RISK_ORDER.indexOf(risk) < 2;

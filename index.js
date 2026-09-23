@@ -1,6 +1,7 @@
 import { Type } from "typebox";
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 import { jevRoute } from "./route.js";
+import { createAutomaticRouter, normalizeAutoRouteConfig } from "./auto-route.js";
 
 const ROUTES = ["cheap", "main", "architect", "debugger", "reviewer", "claude-builder", "claude-critic", "frontier"];
 
@@ -9,6 +10,9 @@ export default definePluginEntry({
   name: "Jev Claw",
   description: "Typed model-routing decisions from TypeSafe Jev",
   register(api) {
+    const autoRouteConfig = normalizeAutoRouteConfig(api.pluginConfig);
+    const automaticRouter = createAutomaticRouter({ api });
+
     api.registerTool({
       name: "jev_route",
       description:
@@ -35,5 +39,19 @@ export default definePluginEntry({
         return { content: [{ type: "text", text: JSON.stringify(details) }], details };
       },
     });
+
+    // Register the complete capability surface even when auto-routing is off.
+    // The installer discovers accepted hooks with default config; conditionally
+    // registering here would make later opt-in config unable to activate them.
+    api.on(
+      "before_prompt_build",
+      (event, ctx) => automaticRouter.beforePromptBuild(event, ctx, autoRouteConfig),
+      { timeoutMs: Math.min(15000, autoRouteConfig.timeoutMs + 500) },
+    );
+    api.on(
+      "before_tool_call",
+      (event, ctx) => automaticRouter.beforeToolCall(event, ctx, autoRouteConfig),
+      { matcher: ["sessions_spawn"], priority: 50 },
+    );
   },
 });

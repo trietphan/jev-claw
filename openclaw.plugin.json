@@ -1,9 +1,9 @@
 {
   "id": "jev-claw",
   "name": "Jev Claw",
-  "description": "Typed model-routing decisions (task type, complexity, risk, route) from TypeSafe Jev",
+  "description": "Typed model-routing decisions and opt-in automatic delegation guidance from TypeSafe Jev",
   "categories": [
-    "agent-orchestration"
+    "tools"
   ],
   "contracts": {
     "tools": [
@@ -15,6 +15,24 @@
   },
   "configSchema": {
     "type": "object",
-    "additionalProperties": false
+    "additionalProperties": false,
+    "properties": {
+      "autoRoute": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean", "default": false },
+          "mode": { "type": "string", "enum": ["guidance", "enforce"], "default": "guidance" },
+          "timeoutMs": { "type": "integer", "minimum": 250, "maximum": 10000, "default": 2500 },
+          "cacheTtlMs": { "type": "integer", "minimum": 1000, "maximum": 600000, "default": 120000 },
+          "minConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.65 },
+          "fallbackRoute": {
+            "type": "string",
+            "enum": ["cheap", "main", "architect", "debugger", "reviewer", "claude-builder", "claude-critic", "frontier"],
+            "default": "main"
+          }
+        }
+      }
+    }
   }
 }

@@ -10,6 +10,11 @@ Not with a prompt that asks an LLM to "think about which model is best", and not
 `if (task.includes("refactor"))` rule. It classifies the task with a small typed-decision model,
 then applies your routing policy as ordinary code.
 
+Version 1.1 also offers **opt-in automatic routing**. A bounded local prefilter skips casual,
+writing-only and deterministic turns. For meaningful software-engineering prompts, a typed hook
+calls Jev once, adds a host-generated routing decision to that turn, and can enforce the decision
+when the agent delegates through `sessions_spawn`.
+
 ```jsonc
 // jev_route({ task: "same websocket race bug, two debugger rounds found nothing",
 //             previous_attempts: 2, test_status: "failing" })
@@ -198,12 +203,79 @@ Then the agent calls `jev_route` before it spawns anything, and delegates to the
 The `reasons` array is worth surfacing in your logs — it makes routing decisions reviewable after
 the fact instead of being an opaque vibe.
 
+## Automatic routing (opt in)
+
+Automatic routing is disabled by default because `before_prompt_build` must read the current
+prompt and sends qualifying task text to TypeSafe. Enable it explicitly:
+
+```jsonc
+{
+  "plugins": {
+    "entries": {
+      "jev-claw": {
+        "enabled": true,
+        "hooks": {
+          "allowConversationAccess": true,
+          "allowPromptInjection": true
+        },
+        "config": {
+          "autoRoute": {
+            "enabled": true,
+            "mode": "guidance",
+            "timeoutMs": 2500,
+            "cacheTtlMs": 120000,
+            "minConfidence": 0.65,
+            "fallbackRoute": "main"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Restart the Gateway after changing plugin configuration.
+
+### Modes
+
+- `guidance` (recommended first): injects the typed decision into host policy context. It never
+  blocks a tool call.
+- `enforce`: also blocks a `sessions_spawn` call that explicitly chooses a different `agentId`,
+  but only when the Jev decision meets `minConfidence`. Both the primary route and its recommended
+  independent second-opinion route are allowed. Missing, timed-out, failed, fallback and
+  low-confidence decisions fail open.
+
+The hook never runs for obvious greetings, writing-only requests, simple status/read/run commands,
+or prompts without both an engineering action and software context. The prefilter is intentionally
+conservative: false negatives cost one manual `jev_route` call; false positives send unrelated
+conversation text to an external service.
+
+For debugging prompts, the hook deterministically extracts explicit attempt counts and passing/
+failing test signals (for example, “after five failed attempts; tests still failing”) so the normal
+debugger → critic → frontier escalation policy remains available. It does not invent missing history.
+
+### Safety and privacy
+
+- Raw prompts are never written to the plugin cache or warning logs; the cache key is a truncated
+  SHA-256 digest and expires after `cacheTtlMs`.
+- Prompt text is sent only to TypeSafe when the local prefilter matches.
+- Injected context contains only the typed decision, never the original prompt or TypeSafe error
+  body, and labels itself as host-generated policy context.
+- The hook grants no tools, permissions or authority.
+- A TypeSafe outage falls back to `fallbackRoute` guidance and never blocks delegation.
+- Automatic routing applies only on OpenClaw runtimes that execute typed plugin hooks. The
+  standalone `jev_route` tool remains available independently.
+
+Start with `guidance`, inspect routing quality, then opt into `enforce` after your route names match
+real OpenClaw agent IDs. In enforce mode, an omitted `sessions_spawn.agentId` is left alone so the
+host's normal default-agent policy remains authoritative.
+
 ---
 
 ## Testing
 
 ```bash
-npm test        # 11 offline policy tests, no API key, no network
+npm test        # offline policy + automatic-hook tests, no API key, no network
 npm run eval    # 10 real tasks against live Jev, needs TYPESAFE_API_KEY
 ```
 

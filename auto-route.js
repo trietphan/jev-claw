@@ -58,13 +58,11 @@ export function shouldAutoRoute(prompt) {
   const testDocument = text.match(TEST_DOCUMENT);
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);
-    const continuation = followup.match(/(?:,\s*|\s+)(?:and|then)\s+|;\s*/i);
+    const continuation = followup.match(/(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+|;\s*/i);
     const engineeringTask = continuation && followup.slice(continuation.index + continuation[0].length);
-    const directTestWork = engineeringTask &&
-      /^(?:implement|build|fix|debug|refactor|add)\s+(?:(?:the|unit|integration|regression)\s+)*tests?\b(?!\s+(?:plan|report|summary|documentation|guide)\b)/i.test(engineeringTask);
     return Boolean(engineeringTask &&
-      ((/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e)\b/i.test(engineeringTask) &&
-        DISTINCT_SOFTWARE_CONTEXT.test(engineeringTask)) || directTestWork));
+      /^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|design|test)\b/i.test(engineeringTask) &&
+      DISTINCT_SOFTWARE_CONTEXT.test(engineeringTask));
   }
   if (DETERMINISTIC_ONLY.test(text)) {
     const remainder = text.replace(DETERMINISTIC_ONLY, "");

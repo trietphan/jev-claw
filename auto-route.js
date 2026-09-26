@@ -61,11 +61,12 @@ export function shouldAutoRoute(prompt) {
     );
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
-  const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) ||
-    (TEST_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text)));
+  const testGeneration = TEST_GENERATION.test(text) &&
+    (DISTINCT_SOFTWARE_CONTEXT.test(text) || /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text));
+  const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
-  if ((firstAction === "test" || firstAction === "kiểm tra") && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
+  if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
   return (ENGINEERING_ACTION.test(text) || codeGeneration) && SOFTWARE_CONTEXT.test(text);
 }
 

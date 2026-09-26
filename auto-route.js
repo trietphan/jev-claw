@@ -16,7 +16,7 @@ const WRITING_ONLY =
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const TEST_GENERATION =
-  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([
@@ -62,12 +62,14 @@ export function shouldAutoRoute(prompt) {
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
   const testGeneration = TEST_GENERATION.test(text) &&
-    (DISTINCT_SOFTWARE_CONTEXT.test(text) || /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text));
+    (DISTINCT_SOFTWARE_CONTEXT.test(text) ||
+      /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text) ||
+      /(?:^|\s)(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;])/iu.test(text));
   const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
   if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
-  return (ENGINEERING_ACTION.test(text) || codeGeneration) && SOFTWARE_CONTEXT.test(text);
+  return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration);
 }
 
 export function deriveRoutingSignals(prompt) {

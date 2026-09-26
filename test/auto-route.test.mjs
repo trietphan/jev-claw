@@ -70,6 +70,11 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write an integration test for the API"), true);
   assert.equal(shouldAutoRoute("Write a unit test for checkout"), true);
   assert.equal(shouldAutoRoute("Write an integration test for checkout"), true);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho API thanh toán"), true);
+  assert.equal(shouldAutoRoute("Viết bài kiểm thử cho API thanh toán"), true);
+  assert.equal(shouldAutoRoute("Viết tài liệu cho kiểm thử API thanh toán"), false);
+  assert.equal(shouldAutoRoute("Refactor the checkout service"), false);
+  assert.equal(shouldAutoRoute("Refactor the checkout API service"), true);
 });
 
 test("confidential non-software request is never sent to Jev", async () => {

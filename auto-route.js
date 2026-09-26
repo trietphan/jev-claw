@@ -16,7 +16,7 @@ const WRITING_ONLY =
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const TEST_GENERATION =
-  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|new|additional)\s+){0,2}tests?\b/i;
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([

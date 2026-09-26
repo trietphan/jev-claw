@@ -54,7 +54,13 @@ export function normalizeAutoRouteConfig(pluginConfig = {}) {
 export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
-  if (text.length < 16 || CASUAL.test(text) || TEST_DOCUMENT.test(text)) return false;
+  if (text.length < 16 || CASUAL.test(text)) return false;
+  const testDocument = text.match(TEST_DOCUMENT);
+  if (testDocument) {
+    const followup = text.slice(testDocument[0].length);
+    return /^(?:\s*,?\s*(?:and|then)\s+|\s*;\s*)/i.test(followup) &&
+      ENGINEERING_ACTION.test(followup) && DISTINCT_SOFTWARE_CONTEXT.test(followup);
+  }
   if (DETERMINISTIC_ONLY.test(text)) {
     const remainder = text.replace(DETERMINISTIC_ONLY, "");
     const withoutBareTestCommand = remainder.replace(
@@ -65,8 +71,7 @@ export function shouldAutoRoute(prompt) {
   }
   const testGeneration = TEST_GENERATION.test(text) &&
     (DISTINCT_SOFTWARE_CONTEXT.test(text) ||
-      /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text) ||
-      /(?:^|\s)(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;])/iu.test(text));
+      /(?:^|\s)(?:bài\s+)?kiểm thử(?:\s+đơn vị)?\s+cho\s+luồng(?=\s|$|[,.!?:;])/iu.test(text));
   const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();

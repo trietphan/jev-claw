@@ -4,9 +4,9 @@ import { jevRoute } from "./route.js";
 export const AUTO_ROUTE_NAMESPACE = "automatic-routing";
 
 const SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|service|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const DISTINCT_SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|service|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const ENGINEERING_ACTION =
   /\b(implement|fix|debug|refactor|build|add|change|update|migrate|review|audit|test|deploy|integrate|optimi[sz]e|remove|upgrade|patch|design|architect|route|spawn|delegate|triage|sửa|xây dựng|thêm|thay đổi|cập nhật|nâng cấp|kiểm tra|đánh giá|thiết kế|tích hợp|tối ưu|giao việc|ủy quyền)\b/i;
 const DETERMINISTIC_ONLY =
@@ -14,7 +14,7 @@ const DETERMINISTIC_ONLY =
 const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
-  /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
+  /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn|tests?)\b)/i;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([
@@ -59,7 +59,7 @@ export function shouldAutoRoute(prompt) {
     );
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
-  const codeGeneration = CODE_GENERATION.test(text);
+  const codeGeneration = CODE_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text));
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
   if ((firstAction === "test" || firstAction === "kiểm tra") && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;

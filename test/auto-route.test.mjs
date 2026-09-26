@@ -58,6 +58,25 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Deploy the API service"), true);
   assert.equal(shouldAutoRoute("Run npm test in the repo"), false);
   assert.equal(shouldAutoRoute("Run npm test and fix failures in the repo"), true);
+  assert.equal(shouldAutoRoute("Review our confidential customer service policy"), false);
+  assert.equal(shouldAutoRoute("Review the confidential class action brief"), false);
+  assert.equal(shouldAutoRoute("Review physical component inventory"), false);
+  assert.equal(shouldAutoRoute("Write unit tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write unit tests for checkout"), true);
+  assert.equal(shouldAutoRoute("Write tests for customer service policy"), false);
+});
+
+test("confidential non-software request is never sent to Jev", async () => {
+  let calls = 0;
+  const { router } = harness(async () => { calls += 1; return decision(); });
+  const result = await router.beforePromptBuild(
+    { prompt: "Review our confidential customer service policy", messages: [] },
+    { runId: "private-policy" },
+    config,
+  );
+  assert.equal(result, undefined);
+  assert.equal(calls, 0);
 });
 
 test("plugin always declares hook capabilities while disabled handlers remain inert", async () => {

@@ -60,8 +60,11 @@ export function shouldAutoRoute(prompt) {
     const followup = text.slice(testDocument[0].length);
     const continuation = followup.match(/(?:,\s*|\s+)(?:and|then)\s+|;\s*/i);
     const engineeringTask = continuation && followup.slice(continuation.index + continuation[0].length);
-    return Boolean(engineeringTask && ENGINEERING_ACTION.test(engineeringTask) &&
-      DISTINCT_SOFTWARE_CONTEXT.test(text));
+    const directTestWork = engineeringTask &&
+      /^(?:implement|build|fix|debug|refactor|add)\s+(?:(?:the|unit|integration|regression)\s+)*tests?\b(?!\s+(?:plan|report|summary|documentation|guide)\b)/i.test(engineeringTask);
+    return Boolean(engineeringTask &&
+      ((/\b(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch)\b/i.test(engineeringTask) &&
+        DISTINCT_SOFTWARE_CONTEXT.test(engineeringTask)) || directTestWork));
   }
   if (DETERMINISTIC_ONLY.test(text)) {
     const remainder = text.replace(DETERMINISTIC_ONLY, "");

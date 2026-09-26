@@ -63,7 +63,7 @@ export function shouldAutoRoute(prompt) {
     const directTestWork = engineeringTask &&
       /^(?:implement|build|fix|debug|refactor|add)\s+(?:(?:the|unit|integration|regression)\s+)*tests?\b(?!\s+(?:plan|report|summary|documentation|guide)\b)/i.test(engineeringTask);
     return Boolean(engineeringTask &&
-      ((/\b(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch)\b/i.test(engineeringTask) &&
+      ((/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e)\b/i.test(engineeringTask) &&
         DISTINCT_SOFTWARE_CONTEXT.test(engineeringTask)) || directTestWork));
   }
   if (DETERMINISTIC_ONLY.test(text)) {

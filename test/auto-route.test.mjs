@@ -65,6 +65,9 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write tests for the checkout API"), true);
   assert.equal(shouldAutoRoute("Write unit tests for checkout"), true);
   assert.equal(shouldAutoRoute("Write tests for customer service policy"), false);
+  assert.equal(shouldAutoRoute("Write documentation for the unit tests"), false);
+  assert.equal(shouldAutoRoute("Write a summary of the regression tests"), false);
+  assert.equal(shouldAutoRoute("Write an integration test for the API"), true);
 });
 
 test("confidential non-software request is never sent to Jev", async () => {

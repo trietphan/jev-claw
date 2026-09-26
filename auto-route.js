@@ -14,7 +14,9 @@ const DETERMINISTIC_ONLY =
 const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
-  /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn|tests?)\b)/i;
+  /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
+const TEST_GENERATION =
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|new|additional)\s+){0,2}tests?\b/i;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([
@@ -59,7 +61,8 @@ export function shouldAutoRoute(prompt) {
     );
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
-  const codeGeneration = CODE_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text));
+  const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) ||
+    (TEST_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || /\b(?:unit|integration|regression|e2e|smoke)\s+tests?\b/i.test(text)));
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
   if ((firstAction === "test" || firstAction === "kiểm tra") && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;

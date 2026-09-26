@@ -15,6 +15,8 @@ const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
+const TEST_DOCUMENT =
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/i;
 const TEST_GENERATION =
   /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
@@ -52,7 +54,7 @@ export function normalizeAutoRouteConfig(pluginConfig = {}) {
 export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
-  if (text.length < 16 || CASUAL.test(text)) return false;
+  if (text.length < 16 || CASUAL.test(text) || TEST_DOCUMENT.test(text)) return false;
   if (DETERMINISTIC_ONLY.test(text)) {
     const remainder = text.replace(DETERMINISTIC_ONLY, "");
     const withoutBareTestCommand = remainder.replace(

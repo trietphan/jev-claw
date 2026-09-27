@@ -102,6 +102,11 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write a test plan for payroll. Summarize the checkout API."), false);
   assert.equal(shouldAutoRoute("Write a test plan for payroll.\nFix the checkout API bug."), true);
   assert.equal(shouldAutoRoute("Write a test plan, then add API tests for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then please fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then kindly fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add an API endpoint for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add an API summary for checkout"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, then add a training module"), false);
   assert.equal(shouldAutoRoute("Write a test plan, then add tests for each training module"), false);
   assert.equal(shouldAutoRoute("Write a regression test report, then fix the payroll API bug"), true);
   assert.equal(shouldAutoRoute("Write a unit test plan for the checkout API, then implement the tests"), false);

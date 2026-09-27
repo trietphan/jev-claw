@@ -62,10 +62,13 @@ export function shouldAutoRoute(prompt) {
     const followup = text.slice(testDocument[0].length);
     const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+|[.;]\s+|\n+/gi;
     for (const continuation of followup.matchAll(separators)) {
-      const task = followup.slice(continuation.index + continuation[0].length);
+      const task = followup.slice(continuation.index + continuation[0].length)
+        .replace(/^(?:please|kindly)\s+/i, "");
       if (/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|design|test)\b/i.test(task) &&
           DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
       if (/^add\s+(?:(?:the|unit|integration|regression|api|sdk|code|frontend|backend)\s+)*tests?\b/i.test(task) &&
+          TEST_CONTINUATION_CONTEXT.test(task)) return true;
+      if (/^add\s+(?:(?:a|an|the)\s+)?(?:api\s+endpoint|code|function|plugin|hook|database\s+migration|schema|frontend\s+component)\b/i.test(task) &&
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
     }
     return false;

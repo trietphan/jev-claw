@@ -16,7 +16,7 @@ const WRITING_ONLY =
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const TEST_CONTINUATION_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
 const TEST_DOCUMENT =
   /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:detailed|concise|comprehensive|short|brief)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/i;
 const TEST_GENERATION =
@@ -61,8 +61,9 @@ export function shouldAutoRoute(prompt) {
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);
     const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+|[.;]\s+|\n+/gi;
-    for (const continuation of followup.matchAll(separators)) {
-      const task = followup.slice(continuation.index + continuation[0].length)
+    const clauses = [...followup.matchAll(separators)];
+    for (const [index, continuation] of clauses.entries()) {
+      const task = followup.slice(continuation.index + continuation[0].length, clauses[index + 1]?.index)
         .replace(/^(?:please|kindly)\s+/i, "");
       if (/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test)\b/i.test(task) &&
           DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;

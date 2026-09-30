@@ -2,7 +2,7 @@
 // these cover `decide()`, which turns a Jev classification into a route.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { decide } from "../route.js";
+import { decide, jevRoute } from "../route.js";
 
 const base = { task_type: "implementation", complexity: "low", risk: "low", second_opinion: false };
 const at = (over) => decide({ ...base, ...over });
@@ -16,6 +16,49 @@ test("cheap is never used for high-risk work", () => {
   const r = at({ task_type: "trivial", risk: "high" });
   assert.notEqual(r.route, "cheap");
   assert.equal(r.needs_second_opinion, true);
+});
+
+test("noncanonical and unknown Jev risk labels never downgrade to cheap", async () => {
+  for (const label of ["High", " Critical ", "high-risk", null]) {
+    const answer = {
+      task_type: { choice: "implementation", probabilities: { implementation: 0.9 } },
+      complexity: { choice: "low", probabilities: { low: 0.9 } },
+      risk: { choice: label, probabilities: { [label]: 0.9 } },
+      second_opinion: { noul: 0 },
+    };
+    const result = await jevRoute({ task: "Rotate tenant auth secrets" }, { ask: async () => answer });
+    assert.notEqual(result.route, "cheap", label);
+    assert.equal(result.needs_second_opinion, true, label);
+    assert.ok(["high", "critical"].includes(result.risk), label);
+    if (label === "high-risk" || label === null) assert.equal(result.confidence, 0, label);
+  }
+  assert.notEqual(at({ risk: "Critical" }).route, "cheap");
+});
+
+test("missing or invalid Jev probabilities cannot enable confident enforcement", async () => {
+  for (const probabilities of [undefined, { implementation: 1.5 }, { implementation: NaN }]) {
+    const result = await jevRoute({ task: "Update checkout API" }, { ask: async () => ({
+      task_type: { choice: "implementation", probabilities },
+      complexity: { choice: "low", probabilities: { low: 0.9 } },
+      risk: { choice: "low", probabilities: { low: 0.9 } },
+      second_opinion: { noul: 0 },
+    }) });
+    assert.equal(result.confidence, 0);
+  }
+});
+
+test("unknown task and complexity choices also fail confidence open", async () => {
+  for (const field of ["task_type", "complexity"]) {
+    const answers = {
+      task_type: { choice: "implementation", probabilities: { implementation: 0.9 } },
+      complexity: { choice: "low", probabilities: { low: 0.9 } },
+      risk: { choice: "low", probabilities: { low: 0.9 } },
+      second_opinion: { noul: 0 },
+    };
+    answers[field] = { choice: "unknown", probabilities: { unknown: 0.9 } };
+    const result = await jevRoute({ task: "Update checkout API" }, { ask: async () => answers });
+    assert.equal(result.confidence, 0, field);
+  }
 });
 
 test("normal implementation stays on main", () => {

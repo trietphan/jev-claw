@@ -70,13 +70,18 @@ export async function askJev(state, { fetchImpl = fetch, timeoutMs = 20000, sign
 }
 
 const maxRisk = (a, b) => (RISK_ORDER.indexOf(a) >= RISK_ORDER.indexOf(b) ? a : b);
-const top = (probs, key) => (probs && typeof probs[key] === "number" ? probs[key] : 1);
+const top = (probs, key) => {
+  const value = probs?.[key];
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1 ? value : 0;
+};
 
 // Map typed classification + attempt history to a route. Order encodes the policy's escalation rules.
 export function decide({ task_type, complexity, risk, second_opinion, previous_attempts = 0, test_status }) {
   const reasons = [];
   let route = "main";
   let second = null;
+  risk = typeof risk === "string" ? risk.trim().toLowerCase() : "";
+  if (!RISK_ORDER.includes(risk)) risk = "high";
   const highRisk = RISK_ORDER.indexOf(risk) >= 2;
   const failing = /fail|red|error/i.test(test_status ?? "");
 
@@ -130,7 +135,10 @@ export async function jevRoute(
 ) {
   const state = { task, changed_files, diff_summary, previous_attempts, test_status };
   const a = await ask(state, { timeoutMs, signal });
-  let risk = a.risk.choice;
+  const rawRisk = a.risk?.choice;
+  const normalizedRisk = typeof rawRisk === "string" ? rawRisk.trim().toLowerCase() : "";
+  const recognizedRisk = RISK_ORDER.includes(normalizedRisk);
+  let risk = recognizedRisk ? normalizedRisk : "high";
   const hits = changed_files.filter((f) => SENSITIVE_PATH.test(f));
   const riskFloor = hits.length > 0 && RISK_ORDER.indexOf(risk) < 2;
   if (riskFloor) risk = "high";
@@ -145,9 +153,9 @@ export async function jevRoute(
   const d = decide(cls);
   if (riskFloor) d.reasons.push(`risk raised to high: sensitive paths ${hits.slice(0, 3).join(", ")}`);
   const confidence = Math.min(
-    top(a.task_type.probabilities, cls.task_type),
-    top(a.complexity.probabilities, cls.complexity),
-    top(a.risk.probabilities, a.risk.choice),
+    Object.hasOwn(QUESTIONS.task_type.criteria, cls.task_type) ? top(a.task_type.probabilities, cls.task_type) : 0,
+    Object.hasOwn(QUESTIONS.complexity.criteria, cls.complexity) ? top(a.complexity.probabilities, cls.complexity) : 0,
+    recognizedRisk ? top(a.risk?.probabilities, rawRisk) : 0,
   );
   return {
     task_type: cls.task_type,

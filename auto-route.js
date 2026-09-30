@@ -4,9 +4,9 @@ import { jevRoute } from "./route.js";
 export const AUTO_ROUTE_NAMESPACE = "automatic-routing";
 
 const SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|service|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|json|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const DISTINCT_SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|class|module|package|dependency|service|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|component|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|json|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const ENGINEERING_ACTION =
   /\b(implement|fix|debug|refactor|build|add|change|update|migrate|review|audit|test|deploy|integrate|optimi[sz]e|remove|upgrade|patch|design|architect|route|spawn|delegate|triage|sửa|xây dựng|thêm|thay đổi|cập nhật|nâng cấp|kiểm tra|đánh giá|thiết kế|tích hợp|tối ưu|giao việc|ủy quyền)\b/i;
 const DETERMINISTIC_ONLY =
@@ -15,6 +15,16 @@ const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
+const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
+const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?!\s+(?:policy|plan|guide|report|documentation)\b)/i;
+const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
+const TEST_CONTINUATION_CONTEXT =
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
+const TEST_DOCUMENT =
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?!and\b|then\b|implement\b|fix\b|build\b|refactor\b)[\p{L}\p{N}_-]+\s+){0,5}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/iu;
+const TEST_GENERATION =
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
+const HUMAN_TEST_SUBJECT = /(?:^|[\s,;])(?:tests?|kiểm thử)\s+(?:for|on|of|about|cho)\s+(?:(?:the|our|new)\s+)?(?:(?!(?:and|then|api|endpoint|sdk|schema|database|code)\b)[\p{L}\p{N}-]+\s+){0,3}(?:candidates?|applicants?|employees?|staff|students?|pupils?|learners?|trainees?|hires?|hiring|recruitment|training|education|courses?|classrooms?|interviews?|exams?|quizzes?|assessments?|people|team|ứng viên|nhân sự|học sinh|sinh viên|đào tạo|tuyển dụng)(?=$|[\s,.!?:;])/giu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([
@@ -51,6 +61,33 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
+  for (const humanSubject of text.matchAll(HUMAN_TEST_SUBJECT)) {
+    if (/\b(?:confidential|private|sensitive)\b/i.test(humanSubject[0])) return false;
+    if (!/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(
+      text.slice(humanSubject.index + humanSubject[0].length),
+    )) return false;
+  }
+  const testDocument = CODE_TO_GENERATE_DOCUMENT.test(text) ? null : text.match(TEST_DOCUMENT);
+  if (testDocument) {
+    const followup = text.slice(testDocument[0].length);
+    const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add|write|summari[sz]e|draft|translate|rewrite)\b)|,\s*(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add)\b)|[.;]\s+(?:(?:and\s+)?then\s+)?|\n+/gi;
+    const clauses = [...followup.matchAll(separators)];
+    for (const [index, continuation] of clauses.entries()) {
+      const task = followup.slice(continuation.index + continuation[0].length, clauses[index + 1]?.index)
+        .replace(/^(?:please|kindly)\s+/i, "");
+      const taskIsDocument = TEST_DOCUMENT.test(task) && !CODE_TO_GENERATE_DOCUMENT.test(task);
+      if (/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test)\b/i.test(task) &&
+          DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
+      if (/^add\s+(?:(?:the|unit|integration|regression|api|sdk|code|frontend|backend)\s+)*tests?\b/i.test(task) &&
+          TEST_CONTINUATION_CONTEXT.test(task)) return true;
+      if (/^add\s+(?:(?:a|an|the)\s+)?(?:api\s+endpoint|code|function|plugin|hook|database\s+migration|schema|frontend\s+component)\b/i.test(task) &&
+          TEST_CONTINUATION_CONTEXT.test(task)) return true;
+      if (!taskIsDocument && DIRECT_WRITE_CODE.test(task) &&
+          DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
+      if (!taskIsDocument && TEST_GENERATION.test(task) && DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
+    }
+    return false;
+  }
   if (DETERMINISTIC_ONLY.test(text)) {
     const remainder = text.replace(DETERMINISTIC_ONLY, "");
     const withoutBareTestCommand = remainder.replace(
@@ -59,11 +96,13 @@ export function shouldAutoRoute(prompt) {
     );
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
-  const codeGeneration = CODE_GENERATION.test(text);
+  const testGeneration = TEST_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text);
+  const softwareService = DIRECT_SOFTWARE_SERVICE.test(text);
+  const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration || (WRITING_ONLY.test(text) && softwareService);
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
-  if ((firstAction === "test" || firstAction === "kiểm tra") && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
-  return (ENGINEERING_ACTION.test(text) || codeGeneration) && SOFTWARE_CONTEXT.test(text);
+  if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
+  return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration || softwareService);
 }
 
 export function deriveRoutingSignals(prompt) {
@@ -235,12 +274,20 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
 
   function beforeToolCall(event, ctx, config) {
     if (!config.enabled || config.mode !== "enforce" || event.toolName !== "sessions_spawn") return;
-    const record = readRunDecision(event.runId ?? ctx.runId);
+    const runId = event.runId ?? ctx.runId;
+    if (!runId) {
+      api.logger.warn?.("jev-claw enforcement skipped: missing runId");
+      return;
+    }
+    const record = readRunDecision(runId);
     const decision = record?.decision;
     // Missing, fallback, or uncertain decisions fail open. The prompt note still guides the model.
     if (!decision || decision.source !== "jev" || decision.confidence < config.minConfidence) return;
     const requestedAgent = typeof event.params.agentId === "string" ? event.params.agentId : undefined;
     const allowedAgents = new Set([decision.route, decision.second_opinion_route].filter(Boolean));
+    if (["model", "provider", "modelFallbacksOverride"].some((key) => event.params[key] != null)) {
+      return { block: true, blockReason: "jev-claw enforce mode requires agent default model; remove spawn model/provider overrides" };
+    }
     if (!requestedAgent || allowedAgents.has(requestedAgent)) return;
     return {
       block: true,

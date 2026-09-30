@@ -116,6 +116,7 @@ openclaw plugins inspect jev-claw --runtime --json   # status: loaded, toolNames
 ### Requirements
 
 - OpenClaw `>= 2026.9.0`, Node 24+
+- Built and checked against OpenClaw `2026.9.7` (the minimum remains `2026.9.0`).
 - A TypeSafe API key in `TYPESAFE_API_KEY`, or at `~/.config/typesafe/api_key`
 
 ---
@@ -258,7 +259,10 @@ debugger → critic → frontier escalation policy remains available. It does no
 
 - Raw prompts are never written to the plugin cache or warning logs; the cache key is a truncated
   SHA-256 digest and expires after `cacheTtlMs`.
-- Prompt text is sent only to TypeSafe when the local prefilter matches.
+- Prompt text is sent only to TypeSafe when the local prefilter matches. Ambiguous class,
+  component, and human-assessment requests are skipped without software evidence (such as JSON
+  or React for code, or an API immediately qualifying a human-domain test subject). `jev_route`
+  remains available manually.
 - Injected context contains only the typed decision, never the original prompt or TypeSafe error
   body, and labels itself as host-generated policy context.
 - The hook grants no tools, permissions or authority.
@@ -268,7 +272,10 @@ debugger → critic → frontier escalation policy remains available. It does no
 
 Start with `guidance`, inspect routing quality, then opt into `enforce` after your route names match
 real OpenClaw agent IDs. In enforce mode, an omitted `sessions_spawn.agentId` is left alone so the
-host's normal default-agent policy remains authoritative.
+host's normal default-agent policy remains authoritative when no model override is supplied.
+Confident Jev decisions block explicit `sessions_spawn.model`, `provider`, and
+`modelFallbacksOverride` values even when `agentId` is omitted or allowed; spawn without overrides to use that agent's configured model. Missing run IDs are logged
+and fail open rather than blocking a call without a decision.
 
 ---
 

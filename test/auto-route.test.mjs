@@ -52,12 +52,152 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Build a confidential hiring plan for the team"), false);
   assert.equal(shouldAutoRoute("Write TypeScript code for an API endpoint"), true);
   assert.equal(shouldAutoRoute("Write a Python function that parses invoices"), true);
+  assert.equal(shouldAutoRoute("Write a class that parses JSON records"), true);
+  assert.equal(shouldAutoRoute("Write a component that renders a button"), false);
+  assert.equal(shouldAutoRoute("Write a React component that renders a button"), true);
+  assert.equal(shouldAutoRoute("Write a class to parse JSON records"), true);
+  assert.equal(shouldAutoRoute("Write a class that validates invoices"), false);
+  assert.equal(shouldAutoRoute("Write a TypeScript class that validates invoices"), true);
+  assert.equal(shouldAutoRoute("Write a component that displays a button"), false);
+  assert.equal(shouldAutoRoute("Write a component that filters drinking water"), false);
+  assert.equal(shouldAutoRoute("Write a class that uses the Montessori method"), false);
+  assert.equal(shouldAutoRoute("Write a class that meets on Mondays"), false);
+  assert.equal(shouldAutoRoute("Write a component that connects power cables"), false);
+  assert.equal(shouldAutoRoute("Write a component to render a button"), false);
+  assert.equal(shouldAutoRoute("Write a class syllabus for first graders"), false);
+  assert.equal(shouldAutoRoute("Write a physical component inventory report"), false);
   assert.equal(shouldAutoRoute("Write API documentation for the endpoint"), false);
   assert.equal(shouldAutoRoute("Write Python code with documentation for invoice parsing"), true);
   assert.equal(shouldAutoRoute("Deploy a confidential hiring plan for the team"), false);
   assert.equal(shouldAutoRoute("Deploy the API service"), true);
+  assert.equal(shouldAutoRoute("Implement a REST service for payments"), true);
+  assert.equal(shouldAutoRoute("Build a web service for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a microservice for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a web service policy for staff"), false);
+  assert.equal(shouldAutoRoute("Review our customer service policy"), false);
   assert.equal(shouldAutoRoute("Run npm test in the repo"), false);
   assert.equal(shouldAutoRoute("Run npm test and fix failures in the repo"), true);
+  assert.equal(shouldAutoRoute("Review our confidential customer service policy"), false);
+  assert.equal(shouldAutoRoute("Review the confidential class action brief"), false);
+  assert.equal(shouldAutoRoute("Review physical component inventory"), false);
+  assert.equal(shouldAutoRoute("Write unit tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write unit tests for checkout"), false);
+  assert.equal(shouldAutoRoute("Write tests for customer service policy"), false);
+  assert.equal(shouldAutoRoute("Write tests for candidates in the frontend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for our confidential candidates in the frontend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for new prospective employees in the backend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for our confidential employee API"), false);
+  assert.equal(shouldAutoRoute("Write tests for the employee API"), true);
+  assert.equal(shouldAutoRoute("Write tests for the candidates endpoint"), true);
+  assert.equal(shouldAutoRoute("Write tests for the employee API, then write tests for candidates in the frontend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for candidates in the frontend team, then write tests for the employee API"), false);
+  assert.equal(shouldAutoRoute("Write tests for the employee API, then write tests for the candidates endpoint"), true);
+  assert.equal(shouldAutoRoute("Write unit tests for employees in the backend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for students in the API course"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho ứng viên trong frontend team"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho nhân sự của backend team"), false);
+  assert.equal(shouldAutoRoute("Write documentation for the unit tests"), false);
+  assert.equal(shouldAutoRoute("Write a summary of the regression tests"), false);
+  assert.equal(shouldAutoRoute("Write an integration test for the API"), true);
+  assert.equal(shouldAutoRoute("Write a unit test for checkout"), false);
+  assert.equal(shouldAutoRoute("Write an integration test for checkout"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho API thanh toán"), true);
+  assert.equal(shouldAutoRoute("Viết bài kiểm thử cho API thanh toán"), true);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng thanh toán"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử đơn vị cho luồng thanh toán"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng thanh toán trong API"), true);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng tuyển dụng nhân sự"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử đơn vị cho luồng đào tạo nhân viên"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho khóa học toán"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho quy trình phòng cháy"), false);
+  assert.equal(shouldAutoRoute("Write acceptance tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write automated tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write end-to-end tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write acceptance tests for customer service policy"), false);
+  assert.equal(shouldAutoRoute("Write documentation for acceptance tests for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write a regression test report for payroll"), false);
+  assert.equal(shouldAutoRoute("Write a detailed unit test plan for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write an API unit test plan for checkout"), false);
+  assert.equal(shouldAutoRoute("Write Python code to generate a test report for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write Python code that generates a test report for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test report for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write a checkout API unit test report"), false);
+  assert.equal(shouldAutoRoute("Write a QA test plan for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write a security audit test report for the auth API"), false);
+  assert.equal(shouldAutoRoute("Write a TypeScript code test plan for the API"), false);
+  assert.equal(shouldAutoRoute("Write TypeScript code and test the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write an API unit test plan, then implement the checkout API tests"), true);
+  assert.equal(shouldAutoRoute("Write a concise regression test report for the payroll API"), false);
+  assert.equal(shouldAutoRoute("Write a unit test plan for payroll"), false);
+  assert.equal(shouldAutoRoute("Write the unit test report for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write a test summary for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write a unit test for payroll"), false);
+  assert.equal(shouldAutoRoute("Write a unit test for the calculus course"), false);
+  assert.equal(shouldAutoRoute("Write a smoke test for the office fire alarm"), false);
+  assert.equal(shouldAutoRoute("Write a unit test for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a unit test plan and implement the tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan for our confidential training program, then add tests for each module"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, and then fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan; then audit the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then design the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then test the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan for frontend and backend, then fix the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan for payroll. Fix the checkout API bug."), true);
+  assert.equal(shouldAutoRoute("Write a test plan for payroll. Summarize the checkout API."), false);
+  assert.equal(shouldAutoRoute("Write a test plan for payroll.\nFix the checkout API bug."), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add API tests for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then please fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then kindly fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add an API endpoint for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add an API summary for checkout"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, then add a training module"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, then add tests for each training module"), false);
+  assert.equal(shouldAutoRoute("Write a regression test report, then fix the payroll API bug"), true);
+  assert.equal(shouldAutoRoute("Write a unit test plan for the checkout API, then implement the tests"), false);
+  assert.equal(shouldAutoRoute("Write a unit test plan for the checkout API, then implement API tests"), true);
+  assert.equal(shouldAutoRoute("Write a unit test plan for the checkout API, then summarize it"), false);
+  assert.equal(shouldAutoRoute("Write a unit test plan for the checkout API and add an executive summary"), false);
+  assert.equal(shouldAutoRoute("Write a test report for the API and review the report"), false);
+  assert.equal(shouldAutoRoute("Write a test report for the API and add an API summary"), false);
+  assert.equal(shouldAutoRoute("Write a unit test plan, then explain how to deploy the payroll API"), false);
+  assert.equal(shouldAutoRoute("Write a test plan for payroll, then update the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test report, then review the checkout API code"), true);
+  assert.equal(shouldAutoRoute("Write a test report and review the confidential report, then summarize the API documentation"), false);
+  assert.equal(shouldAutoRoute("Write a test report and review the confidential report, then fix the checkout API code"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add tests for the auth bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then fix checkout and API bugs"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then write TypeScript code for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then write Python code to generate a test report for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then write a class to parse JSON records"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then write unit tests for the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, then add tests for candidates in the frontend team"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, then write a test report about Python code"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, then write documentation about Python code"), false);
+  assert.equal(shouldAutoRoute("Write a test plan, fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, review the confidential report, then summarize the API docs"), false);
+  assert.equal(shouldAutoRoute("Write a test plan. Then fix the checkout API bug."), true);
+  assert.equal(shouldAutoRoute("Write a test plan. Then summarize the checkout API report."), false);
+  assert.equal(shouldAutoRoute("Write a test plan, then add tests for the training module"), false);
+  assert.equal(shouldAutoRoute("Write a test report, then review the report"), false);
+  assert.equal(shouldAutoRoute("Write a test plan for payroll, then optimize the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a unit test plan and organize the calculus course"), false);
+  assert.equal(shouldAutoRoute("Viết tài liệu về kiểm thử cho luồng thanh toán"), false);
+  assert.equal(shouldAutoRoute("Viết tài liệu cho kiểm thử API thanh toán"), false);
+  assert.equal(shouldAutoRoute("Refactor the checkout service"), false);
+  assert.equal(shouldAutoRoute("Refactor the checkout API service"), true);
+});
+
+test("confidential non-software request is never sent to Jev", async () => {
+  let calls = 0;
+  const { router } = harness(async () => { calls += 1; return decision(); });
+  const result = await router.beforePromptBuild(
+    { prompt: "Review our confidential customer service policy", messages: [] },
+    { runId: "private-policy" },
+    config,
+  );
+  assert.equal(result, undefined);
+  assert.equal(calls, 0);
 });
 
 test("plugin always declares hook capabilities while disabled handlers remain inert", async () => {
@@ -267,6 +407,29 @@ test("enforce mode permits matching delegation and blocks only confident mismatc
     ),
     undefined,
   );
+});
+
+test("enforce mode blocks explicit model and provider overrides on allowed agent", async () => {
+  const { router, warnings } = harness(async () => decision({ route: "cheap", confidence: 0.91 }));
+  const ctx = { runId: "run-model-override" };
+  await router.beforePromptBuild({ prompt: "Fix the checkout API code", messages: [] }, ctx, config);
+  for (const overrides of [
+    { model: "anthropic/claude-opus-5" },
+    { provider: "anthropic" },
+    { modelFallbacksOverride: ["anthropic/claude-opus-5"] },
+  ]) {
+    const result = router.beforeToolCall(
+      { toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "cheap", ...overrides } },
+      ctx,
+      config,
+    );
+    assert.equal(result.block, true);
+    assert.ok(result.blockReason.includes("remove spawn model/provider overrides"));
+  }
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", runId: ctx.runId, params: {} }, ctx, config), undefined);
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", runId: ctx.runId, params: { model: "anthropic/claude-opus-5" } }, ctx, config).block, true);
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "cheap" } }, {}, config), undefined);
+  assert.match(warnings.at(-1), /missing runId/);
 });
 
 test("enforce mode permits the recommended independent second opinion", async () => {

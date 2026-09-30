@@ -54,6 +54,8 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write a Python function that parses invoices"), true);
   assert.equal(shouldAutoRoute("Write a class that parses JSON records"), true);
   assert.equal(shouldAutoRoute("Write a component that renders a button"), true);
+  assert.equal(shouldAutoRoute("Write a class to parse JSON records"), true);
+  assert.equal(shouldAutoRoute("Write a component to render a button"), true);
   assert.equal(shouldAutoRoute("Write a class syllabus for first graders"), false);
   assert.equal(shouldAutoRoute("Write a physical component inventory report"), false);
   assert.equal(shouldAutoRoute("Write API documentation for the endpoint"), false);
@@ -76,8 +78,11 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write an integration test for checkout"), false);
   assert.equal(shouldAutoRoute("Viết kiểm thử cho API thanh toán"), true);
   assert.equal(shouldAutoRoute("Viết bài kiểm thử cho API thanh toán"), true);
-  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng thanh toán"), true);
-  assert.equal(shouldAutoRoute("Viết kiểm thử đơn vị cho luồng thanh toán"), true);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng thanh toán"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử đơn vị cho luồng thanh toán"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng thanh toán trong API"), true);
+  assert.equal(shouldAutoRoute("Viết kiểm thử cho luồng tuyển dụng nhân sự"), false);
+  assert.equal(shouldAutoRoute("Viết kiểm thử đơn vị cho luồng đào tạo nhân viên"), false);
   assert.equal(shouldAutoRoute("Viết kiểm thử cho khóa học toán"), false);
   assert.equal(shouldAutoRoute("Viết kiểm thử cho quy trình phòng cháy"), false);
   assert.equal(shouldAutoRoute("Write acceptance tests for the checkout API"), true);

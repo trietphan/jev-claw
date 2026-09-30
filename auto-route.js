@@ -82,10 +82,8 @@ export function shouldAutoRoute(prompt) {
     );
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
-  const testGeneration = TEST_GENERATION.test(text) &&
-    (DISTINCT_SOFTWARE_CONTEXT.test(text) ||
-      /(?:^|\s)(?:bài\s+)?kiểm thử(?:\s+đơn vị)?\s+cho\s+luồng(?=\s|$|[,.!?:;])/iu.test(text));
-  const directCodeObject = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which)\s+)?(?:parses?|renders?|implements?|extends?|returns?|handles?|uses?)\b/i.test(text);
+  const testGeneration = TEST_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text);
+  const directCodeObject = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which|to)\s+)?(?:parses?|renders?|implements?|extends?|returns?|handles?|uses?)\b/i.test(text);
   const codeGeneration = (CODE_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || directCodeObject)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();

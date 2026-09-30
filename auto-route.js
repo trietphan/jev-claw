@@ -15,7 +15,7 @@ const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
-const DIRECT_CODE_OBJECT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which|to)\s+)?(?:parses?|renders?|implements?|extends?|returns?|handles?|uses?)\b/i;
+const DIRECT_CODE_OBJECT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which|to)\s+)?(?:parses?|renders?|validates?|displays?|transforms?|serializ(?:es?|ing)|deserializ(?:es?|ing)|calculates?|filters?|maps?|fetches?|saves?|sorts?|tracks?|processes?|converts?|formats?|implements?|extends?|returns?|handles?|uses?)\b/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;

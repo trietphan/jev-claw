@@ -55,6 +55,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write a class that parses JSON records"), true);
   assert.equal(shouldAutoRoute("Write a component that renders a button"), true);
   assert.equal(shouldAutoRoute("Write a class to parse JSON records"), true);
+  assert.equal(shouldAutoRoute("Write a class that validates invoices"), true);
+  assert.equal(shouldAutoRoute("Write a component that displays a button"), true);
+  assert.equal(shouldAutoRoute("Write a class that meets on Mondays"), false);
+  assert.equal(shouldAutoRoute("Write a component that connects power cables"), false);
   assert.equal(shouldAutoRoute("Write a component to render a button"), true);
   assert.equal(shouldAutoRoute("Write a class syllabus for first graders"), false);
   assert.equal(shouldAutoRoute("Write a physical component inventory report"), false);

@@ -259,7 +259,10 @@ debugger → critic → frontier escalation policy remains available. It does no
 
 - Raw prompts are never written to the plugin cache or warning logs; the cache key is a truncated
   SHA-256 digest and expires after `cacheTtlMs`.
-- Prompt text is sent only to TypeSafe when the local prefilter matches.
+- Prompt text is sent only to TypeSafe when the local prefilter matches. Ambiguous class,
+  component, and human-assessment requests are skipped without software evidence (such as JSON
+  or React for code, or an API immediately qualifying a human-domain test subject). `jev_route`
+  remains available manually.
 - Injected context contains only the typed decision, never the original prompt or TypeSafe error
   body, and labels itself as host-generated policy context.
 - The hook grants no tools, permissions or authority.

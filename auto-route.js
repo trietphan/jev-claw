@@ -4,9 +4,9 @@ import { jevRoute } from "./route.js";
 export const AUTO_ROUTE_NAMESPACE = "automatic-routing";
 
 const SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|test(?:s|ing)?|typescript|javascript|python|react|json|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const DISTINCT_SOFTWARE_CONTEXT =
-  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
+  /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|typescript|javascript|python|react|json|database|schema|migration|auth|frontend|backend|function|module|package|dependency|ci|pr|pull request|commit|lint|typecheck|websocket|endpoint|plugin|hook|subagent|model routing|mã nguồn|lỗi|kiểm thử|triển khai|cơ sở dữ liệu|giao diện)\b/i;
 const ENGINEERING_ACTION =
   /\b(implement|fix|debug|refactor|build|add|change|update|migrate|review|audit|test|deploy|integrate|optimi[sz]e|remove|upgrade|patch|design|architect|route|spawn|delegate|triage|sửa|xây dựng|thêm|thay đổi|cập nhật|nâng cấp|kiểm tra|đánh giá|thiết kế|tích hợp|tối ưu|giao việc|ủy quyền)\b/i;
 const DETERMINISTIC_ONLY =
@@ -15,7 +15,6 @@ const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
-const DIRECT_CODE_OBJECT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which|to)\s+)?(?:parses?|renders?|validates?|displays?|transforms?|serializ(?:es?|ing)|deserializ(?:es?|ing)|calculates?|filters?|maps?|fetches?|saves?|sorts?|tracks?|processes?|converts?|formats?|implements?|extends?|returns?|handles?|uses?)\b/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
@@ -60,7 +59,10 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
-  if (HUMAN_TEST_SUBJECT.test(text)) return false;
+  const humanSubject = text.match(HUMAN_TEST_SUBJECT);
+  if (humanSubject && !/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(
+    text.slice(humanSubject.index + humanSubject[0].length),
+  )) return false;
   const testDocument = text.match(TEST_DOCUMENT);
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);
@@ -76,7 +78,7 @@ export function shouldAutoRoute(prompt) {
       if (/^add\s+(?:(?:a|an|the)\s+)?(?:api\s+endpoint|code|function|plugin|hook|database\s+migration|schema|frontend\s+component)\b/i.test(task) &&
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
       if (!TEST_DOCUMENT.test(task) && DIRECT_WRITE_CODE.test(task) &&
-          (DISTINCT_SOFTWARE_CONTEXT.test(task) || DIRECT_CODE_OBJECT.test(task))) return true;
+          DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
       if (!TEST_DOCUMENT.test(task) && TEST_GENERATION.test(task) && DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
     }
     return false;
@@ -90,12 +92,11 @@ export function shouldAutoRoute(prompt) {
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
   const testGeneration = TEST_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text);
-  const directCodeObject = DIRECT_CODE_OBJECT.test(text);
-  const codeGeneration = (CODE_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || directCodeObject)) || testGeneration;
+  const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
   if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
-  return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration || directCodeObject);
+  return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration);
 }
 
 export function deriveRoutingSignals(prompt) {

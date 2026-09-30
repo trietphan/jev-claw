@@ -18,7 +18,7 @@ const CODE_GENERATION =
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
 const TEST_DOCUMENT =
-  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:detailed|concise|comprehensive|short|brief)\s+)?(?:(?:(?:[a-z][a-z0-9_-]*\s+)?(?:api|sdk|cli|typescript|javascript|python|react|database|schema|frontend|backend|auth|plugin|endpoint|code))\s+){0,2}(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/i;
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?!and\b|then\b|implement\b|fix\b|build\b|refactor\b)[\p{L}\p{N}_-]+\s+){0,5}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/iu;
 const TEST_GENERATION =
   /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
@@ -85,11 +85,12 @@ export function shouldAutoRoute(prompt) {
   const testGeneration = TEST_GENERATION.test(text) &&
     (DISTINCT_SOFTWARE_CONTEXT.test(text) ||
       /(?:^|\s)(?:bài\s+)?kiểm thử(?:\s+đơn vị)?\s+cho\s+luồng(?=\s|$|[,.!?:;])/iu.test(text));
-  const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration;
+  const directCodeObject = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which)\s+)?(?:parses?|renders?|implements?|extends?|returns?|handles?|uses?)\b/i.test(text);
+  const codeGeneration = (CODE_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || directCodeObject)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
   if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
-  return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration);
+  return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration || directCodeObject);
 }
 
 export function deriveRoutingSignals(prompt) {

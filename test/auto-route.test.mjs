@@ -52,6 +52,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Build a confidential hiring plan for the team"), false);
   assert.equal(shouldAutoRoute("Write TypeScript code for an API endpoint"), true);
   assert.equal(shouldAutoRoute("Write a Python function that parses invoices"), true);
+  assert.equal(shouldAutoRoute("Write a class that parses JSON records"), true);
+  assert.equal(shouldAutoRoute("Write a component that renders a button"), true);
+  assert.equal(shouldAutoRoute("Write a class syllabus for first graders"), false);
+  assert.equal(shouldAutoRoute("Write a physical component inventory report"), false);
   assert.equal(shouldAutoRoute("Write API documentation for the endpoint"), false);
   assert.equal(shouldAutoRoute("Write Python code with documentation for invoice parsing"), true);
   assert.equal(shouldAutoRoute("Deploy a confidential hiring plan for the team"), false);
@@ -85,6 +89,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write a detailed unit test plan for the checkout API"), false);
   assert.equal(shouldAutoRoute("Write an API unit test plan for checkout"), false);
   assert.equal(shouldAutoRoute("Write a checkout API unit test report"), false);
+  assert.equal(shouldAutoRoute("Write a QA test plan for the checkout API"), false);
+  assert.equal(shouldAutoRoute("Write a security audit test report for the auth API"), false);
+  assert.equal(shouldAutoRoute("Write a TypeScript code test plan for the API"), false);
+  assert.equal(shouldAutoRoute("Write TypeScript code and test the checkout API"), true);
   assert.equal(shouldAutoRoute("Write an API unit test plan, then implement the checkout API tests"), true);
   assert.equal(shouldAutoRoute("Write a concise regression test report for the payroll API"), false);
   assert.equal(shouldAutoRoute("Write a unit test plan for payroll"), false);

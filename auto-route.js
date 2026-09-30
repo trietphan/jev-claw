@@ -15,6 +15,8 @@ const WRITING_ONLY =
   /^\s*(write|draft|summari[sz]e|translate|rewrite|soạn|viết|tóm tắt|dịch)\b/i;
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
+const DIRECT_CODE_OBJECT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which|to)\s+)?(?:parses?|renders?|implements?|extends?|returns?|handles?|uses?)\b/i;
+const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
 const TEST_DOCUMENT =
@@ -71,6 +73,9 @@ export function shouldAutoRoute(prompt) {
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
       if (/^add\s+(?:(?:a|an|the)\s+)?(?:api\s+endpoint|code|function|plugin|hook|database\s+migration|schema|frontend\s+component)\b/i.test(task) &&
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
+      if (!TEST_DOCUMENT.test(task) && DIRECT_WRITE_CODE.test(task) &&
+          (DISTINCT_SOFTWARE_CONTEXT.test(task) || DIRECT_CODE_OBJECT.test(task))) return true;
+      if (!TEST_DOCUMENT.test(task) && TEST_GENERATION.test(task) && DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
     }
     return false;
   }
@@ -83,7 +88,7 @@ export function shouldAutoRoute(prompt) {
     if (!ENGINEERING_ACTION.test(withoutBareTestCommand)) return false;
   }
   const testGeneration = TEST_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text);
-  const directCodeObject = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:class|component)\s+(?:(?:that|which|to)\s+)?(?:parses?|renders?|implements?|extends?|returns?|handles?|uses?)\b/i.test(text);
+  const directCodeObject = DIRECT_CODE_OBJECT.test(text);
   const codeGeneration = (CODE_GENERATION.test(text) && (DISTINCT_SOFTWARE_CONTEXT.test(text) || directCodeObject)) || testGeneration;
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();

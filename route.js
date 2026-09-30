@@ -137,7 +137,8 @@ export async function jevRoute(
   const a = await ask(state, { timeoutMs, signal });
   const rawRisk = a.risk?.choice;
   const normalizedRisk = typeof rawRisk === "string" ? rawRisk.trim().toLowerCase() : "";
-  let risk = RISK_ORDER.includes(normalizedRisk) ? normalizedRisk : "high";
+  const recognizedRisk = RISK_ORDER.includes(normalizedRisk);
+  let risk = recognizedRisk ? normalizedRisk : "high";
   const hits = changed_files.filter((f) => SENSITIVE_PATH.test(f));
   const riskFloor = hits.length > 0 && RISK_ORDER.indexOf(risk) < 2;
   if (riskFloor) risk = "high";
@@ -152,9 +153,9 @@ export async function jevRoute(
   const d = decide(cls);
   if (riskFloor) d.reasons.push(`risk raised to high: sensitive paths ${hits.slice(0, 3).join(", ")}`);
   const confidence = Math.min(
-    top(a.task_type.probabilities, cls.task_type),
-    top(a.complexity.probabilities, cls.complexity),
-    top(a.risk?.probabilities, rawRisk),
+    Object.hasOwn(QUESTIONS.task_type.criteria, cls.task_type) ? top(a.task_type.probabilities, cls.task_type) : 0,
+    Object.hasOwn(QUESTIONS.complexity.criteria, cls.complexity) ? top(a.complexity.probabilities, cls.complexity) : 0,
+    recognizedRisk ? top(a.risk?.probabilities, rawRisk) : 0,
   );
   return {
     task_type: cls.task_type,

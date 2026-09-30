@@ -30,6 +30,7 @@ test("noncanonical and unknown Jev risk labels never downgrade to cheap", async 
     assert.notEqual(result.route, "cheap", label);
     assert.equal(result.needs_second_opinion, true, label);
     assert.ok(["high", "critical"].includes(result.risk), label);
+    if (label === "high-risk" || label === null) assert.equal(result.confidence, 0, label);
   }
   assert.notEqual(at({ risk: "Critical" }).route, "cheap");
 });
@@ -43,6 +44,20 @@ test("missing or invalid Jev probabilities cannot enable confident enforcement",
       second_opinion: { noul: 0 },
     }) });
     assert.equal(result.confidence, 0);
+  }
+});
+
+test("unknown task and complexity choices also fail confidence open", async () => {
+  for (const field of ["task_type", "complexity"]) {
+    const answers = {
+      task_type: { choice: "implementation", probabilities: { implementation: 0.9 } },
+      complexity: { choice: "low", probabilities: { low: 0.9 } },
+      risk: { choice: "low", probabilities: { low: 0.9 } },
+      second_opinion: { noul: 0 },
+    };
+    answers[field] = { choice: "unknown", probabilities: { unknown: 0.9 } };
+    const result = await jevRoute({ task: "Update checkout API" }, { ask: async () => answers });
+    assert.equal(result.confidence, 0, field);
   }
 });
 

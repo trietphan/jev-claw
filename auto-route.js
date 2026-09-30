@@ -60,7 +60,7 @@ export function shouldAutoRoute(prompt) {
   const testDocument = text.match(TEST_DOCUMENT);
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);
-    const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+|[.;]\s+|\n+/gi;
+    const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add|write|summari[sz]e|draft|translate|rewrite)\b)|[.;]\s+(?:(?:and\s+)?then\s+)?|\n+/gi;
     const clauses = [...followup.matchAll(separators)];
     for (const [index, continuation] of clauses.entries()) {
       const task = followup.slice(continuation.index + continuation[0].length, clauses[index + 1]?.index)

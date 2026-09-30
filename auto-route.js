@@ -64,7 +64,7 @@ export function shouldAutoRoute(prompt) {
     for (const continuation of followup.matchAll(separators)) {
       const task = followup.slice(continuation.index + continuation[0].length)
         .replace(/^(?:please|kindly)\s+/i, "");
-      if (/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|design|test)\b/i.test(task) &&
+      if (/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test)\b/i.test(task) &&
           DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
       if (/^add\s+(?:(?:the|unit|integration|regression|api|sdk|code|frontend|backend)\s+)*tests?\b/i.test(task) &&
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
@@ -260,13 +260,24 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
 
   function beforeToolCall(event, ctx, config) {
     if (!config.enabled || config.mode !== "enforce" || event.toolName !== "sessions_spawn") return;
-    const record = readRunDecision(event.runId ?? ctx.runId);
+    const runId = event.runId ?? ctx.runId;
+    if (!runId) {
+      api.logger.warn?.("jev-claw enforcement skipped: missing runId");
+      return;
+    }
+    const record = readRunDecision(runId);
     const decision = record?.decision;
     // Missing, fallback, or uncertain decisions fail open. The prompt note still guides the model.
     if (!decision || decision.source !== "jev" || decision.confidence < config.minConfidence) return;
     const requestedAgent = typeof event.params.agentId === "string" ? event.params.agentId : undefined;
     const allowedAgents = new Set([decision.route, decision.second_opinion_route].filter(Boolean));
-    if (!requestedAgent || allowedAgents.has(requestedAgent)) return;
+    if (!requestedAgent) return;
+    if (allowedAgents.has(requestedAgent)) {
+      if (["model", "provider", "modelFallbacksOverride"].some((key) => event.params[key] != null)) {
+        return { block: true, blockReason: "jev-claw enforce mode requires agent default model; remove spawn model/provider overrides" };
+      }
+      return;
+    }
     return {
       block: true,
       blockReason: `jev-claw routing policy allows agentId=${[...allowedAgents].join(" or ")}; requested=${requestedAgent}`,

@@ -117,6 +117,8 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write a test report for the API and add an API summary"), false);
   assert.equal(shouldAutoRoute("Write a unit test plan, then explain how to deploy the payroll API"), false);
   assert.equal(shouldAutoRoute("Write a test plan for payroll, then update the checkout API"), true);
+  assert.equal(shouldAutoRoute("Write a test report, then review the checkout API code"), true);
+  assert.equal(shouldAutoRoute("Write a test report, then review the report"), false);
   assert.equal(shouldAutoRoute("Write a test plan for payroll, then optimize the checkout API"), true);
   assert.equal(shouldAutoRoute("Write a unit test plan and organize the calculus course"), false);
   assert.equal(shouldAutoRoute("Viết tài liệu về kiểm thử cho luồng thanh toán"), false);
@@ -344,6 +346,27 @@ test("enforce mode permits matching delegation and blocks only confident mismatc
     ),
     undefined,
   );
+});
+
+test("enforce mode blocks explicit model and provider overrides on allowed agent", async () => {
+  const { router, warnings } = harness(async () => decision({ route: "cheap", confidence: 0.91 }));
+  const ctx = { runId: "run-model-override" };
+  await router.beforePromptBuild({ prompt: "Fix the checkout API code", messages: [] }, ctx, config);
+  for (const overrides of [
+    { model: "anthropic/claude-opus-5" },
+    { provider: "anthropic" },
+    { modelFallbacksOverride: ["anthropic/claude-opus-5"] },
+  ]) {
+    const result = router.beforeToolCall(
+      { toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "cheap", ...overrides } },
+      ctx,
+      config,
+    );
+    assert.equal(result.block, true);
+    assert.ok(result.blockReason.includes("remove spawn model/provider overrides"));
+  }
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "cheap" } }, {}, config), undefined);
+  assert.match(warnings.at(-1), /missing runId/);
 });
 
 test("enforce mode permits the recommended independent second opinion", async () => {

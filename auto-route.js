@@ -60,7 +60,7 @@ export function shouldAutoRoute(prompt) {
   const testDocument = text.match(TEST_DOCUMENT);
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);
-    const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add|write|summari[sz]e|draft|translate|rewrite)\b)|[.;]\s+(?:(?:and\s+)?then\s+)?|\n+/gi;
+    const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add|write|summari[sz]e|draft|translate|rewrite)\b)|,\s*(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add)\b)|[.;]\s+(?:(?:and\s+)?then\s+)?|\n+/gi;
     const clauses = [...followup.matchAll(separators)];
     for (const [index, continuation] of clauses.entries()) {
       const task = followup.slice(continuation.index + continuation[0].length, clauses[index + 1]?.index)
@@ -272,13 +272,10 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
     if (!decision || decision.source !== "jev" || decision.confidence < config.minConfidence) return;
     const requestedAgent = typeof event.params.agentId === "string" ? event.params.agentId : undefined;
     const allowedAgents = new Set([decision.route, decision.second_opinion_route].filter(Boolean));
-    if (!requestedAgent) return;
-    if (allowedAgents.has(requestedAgent)) {
-      if (["model", "provider", "modelFallbacksOverride"].some((key) => event.params[key] != null)) {
-        return { block: true, blockReason: "jev-claw enforce mode requires agent default model; remove spawn model/provider overrides" };
-      }
-      return;
+    if (["model", "provider", "modelFallbacksOverride"].some((key) => event.params[key] != null)) {
+      return { block: true, blockReason: "jev-claw enforce mode requires agent default model; remove spawn model/provider overrides" };
     }
+    if (!requestedAgent || allowedAgents.has(requestedAgent)) return;
     return {
       block: true,
       blockReason: `jev-claw routing policy allows agentId=${[...allowedAgents].join(" or ")}; requested=${requestedAgent}`,

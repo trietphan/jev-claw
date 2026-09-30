@@ -269,9 +269,9 @@ debugger → critic → frontier escalation policy remains available. It does no
 
 Start with `guidance`, inspect routing quality, then opt into `enforce` after your route names match
 real OpenClaw agent IDs. In enforce mode, an omitted `sessions_spawn.agentId` is left alone so the
-host's normal default-agent policy remains authoritative. Confident Jev decisions block
-explicit `sessions_spawn.model`, `provider`, and `modelFallbacksOverride` values even for an allowed
-agent ID; spawn without overrides to use that agent's configured model. Missing run IDs are logged
+host's normal default-agent policy remains authoritative when no model override is supplied.
+Confident Jev decisions block explicit `sessions_spawn.model`, `provider`, and
+`modelFallbacksOverride` values even when `agentId` is omitted or allowed; spawn without overrides to use that agent's configured model. Missing run IDs are logged
 and fail open rather than blocking a call without a decision.
 
 ---

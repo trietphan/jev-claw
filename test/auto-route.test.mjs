@@ -122,6 +122,8 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write a test report and review the confidential report, then fix the checkout API code"), true);
   assert.equal(shouldAutoRoute("Write a test plan, then add tests for the auth bug"), true);
   assert.equal(shouldAutoRoute("Write a test plan, then fix checkout and API bugs"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, fix the checkout API bug"), true);
+  assert.equal(shouldAutoRoute("Write a test plan, review the confidential report, then summarize the API docs"), false);
   assert.equal(shouldAutoRoute("Write a test plan. Then fix the checkout API bug."), true);
   assert.equal(shouldAutoRoute("Write a test plan. Then summarize the checkout API report."), false);
   assert.equal(shouldAutoRoute("Write a test plan, then add tests for the training module"), false);
@@ -372,6 +374,8 @@ test("enforce mode blocks explicit model and provider overrides on allowed agent
     assert.equal(result.block, true);
     assert.ok(result.blockReason.includes("remove spawn model/provider overrides"));
   }
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", runId: ctx.runId, params: {} }, ctx, config), undefined);
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", runId: ctx.runId, params: { model: "anthropic/claude-opus-5" } }, ctx, config).block, true);
   assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "cheap" } }, {}, config), undefined);
   assert.match(warnings.at(-1), /missing runId/);
 });

@@ -18,7 +18,7 @@ const CODE_GENERATION =
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
 const TEST_DOCUMENT =
-  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:detailed|concise|comprehensive|short|brief)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/i;
+  /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:detailed|concise|comprehensive|short|brief)\s+)?(?:(?:(?:[a-z][a-z0-9_-]*\s+)?(?:api|sdk|cli|typescript|javascript|python|react|database|schema|frontend|backend|auth|plugin|endpoint|code))\s+){0,2}(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/i;
 const TEST_GENERATION =
   /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;

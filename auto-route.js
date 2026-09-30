@@ -22,7 +22,7 @@ const TEST_DOCUMENT =
   /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?!and\b|then\b|implement\b|fix\b|build\b|refactor\b)[\p{L}\p{N}_-]+\s+){0,5}tests?\s+(?:report|plan|summary|documentation|docs|guide|brief|memo|overview|strategy|analysis)\b/iu;
 const TEST_GENERATION =
   /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:unit|integration|regression|e2e|smoke|acceptance|automated|end-to-end|new|additional)\s+){0,2}(?:tests?\b|(?:bài\s+)?kiểm thử(?=\s|$|[,.!?:;]))/iu;
-const HUMAN_TEST_SUBJECT = /(?:^|[\s,;])(?:tests?|kiểm thử)\s+(?:for|on|of|about|cho)\s+(?:(?:the|our|new)\s+)?(?:candidates?|applicants?|employees?|staff|students?|pupils?|learners?|trainees?|hires?|hiring|recruitment|training|education|courses?|classrooms?|interviews?|exams?|quizzes?|assessments?|people|team|ứng viên|nhân sự|học sinh|sinh viên|đào tạo|tuyển dụng)(?=$|[\s,.!?:;])/iu;
+const HUMAN_TEST_SUBJECT = /(?:^|[\s,;])(?:tests?|kiểm thử)\s+(?:for|on|of|about|cho)\s+(?:(?:the|our|new)\s+)?(?:candidates?|applicants?|employees?|staff|students?|pupils?|learners?|trainees?|hires?|hiring|recruitment|training|education|courses?|classrooms?|interviews?|exams?|quizzes?|assessments?|people|team|ứng viên|nhân sự|học sinh|sinh viên|đào tạo|tuyển dụng)(?=$|[\s,.!?:;])/giu;
 const CASUAL = /^\s*(hi|hello|hey|thanks|thank you|cảm ơn|chào|ok|okay)[!.\s]*$/i;
 
 const ROUTES = new Set([
@@ -59,10 +59,11 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
-  const humanSubject = text.match(HUMAN_TEST_SUBJECT);
-  if (humanSubject && !/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(
-    text.slice(humanSubject.index + humanSubject[0].length),
-  )) return false;
+  for (const humanSubject of text.matchAll(HUMAN_TEST_SUBJECT)) {
+    if (!/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(
+      text.slice(humanSubject.index + humanSubject[0].length),
+    )) return false;
+  }
   const testDocument = text.match(TEST_DOCUMENT);
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);

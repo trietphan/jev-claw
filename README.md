@@ -116,6 +116,7 @@ openclaw plugins inspect jev-claw --runtime --json   # status: loaded, toolNames
 ### Requirements
 
 - OpenClaw `>= 2026.9.0`, Node 24+
+- Built and checked against OpenClaw `2026.9.7` (the minimum remains `2026.9.0`).
 - A TypeSafe API key in `TYPESAFE_API_KEY`, or at `~/.config/typesafe/api_key`
 
 ---

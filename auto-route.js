@@ -16,6 +16,7 @@ const WRITING_ONLY =
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
+const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
 const TEST_DOCUMENT =
@@ -64,7 +65,7 @@ export function shouldAutoRoute(prompt) {
       text.slice(humanSubject.index + humanSubject[0].length),
     )) return false;
   }
-  const testDocument = text.match(TEST_DOCUMENT);
+  const testDocument = CODE_TO_GENERATE_DOCUMENT.test(text) ? null : text.match(TEST_DOCUMENT);
   if (testDocument) {
     const followup = text.slice(testDocument[0].length);
     const separators = /(?:,\s*|\s+|;\s*)(?:(?:and\s+)?then|and)\s+(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add|write|summari[sz]e|draft|translate|rewrite)\b)|,\s*(?=(?:(?:please|kindly)\s+)?(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test|add)\b)|[.;]\s+(?:(?:and\s+)?then\s+)?|\n+/gi;
@@ -72,15 +73,16 @@ export function shouldAutoRoute(prompt) {
     for (const [index, continuation] of clauses.entries()) {
       const task = followup.slice(continuation.index + continuation[0].length, clauses[index + 1]?.index)
         .replace(/^(?:please|kindly)\s+/i, "");
+      const taskIsDocument = TEST_DOCUMENT.test(task) && !CODE_TO_GENERATE_DOCUMENT.test(task);
       if (/^(?:implement|fix|debug|refactor|build|migrate|deploy|integrate|patch|update|change|remove|upgrade|optimi[sz]e|audit|review|design|test)\b/i.test(task) &&
           DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
       if (/^add\s+(?:(?:the|unit|integration|regression|api|sdk|code|frontend|backend)\s+)*tests?\b/i.test(task) &&
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
       if (/^add\s+(?:(?:a|an|the)\s+)?(?:api\s+endpoint|code|function|plugin|hook|database\s+migration|schema|frontend\s+component)\b/i.test(task) &&
           TEST_CONTINUATION_CONTEXT.test(task)) return true;
-      if (!TEST_DOCUMENT.test(task) && DIRECT_WRITE_CODE.test(task) &&
+      if (!taskIsDocument && DIRECT_WRITE_CODE.test(task) &&
           DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
-      if (!TEST_DOCUMENT.test(task) && TEST_GENERATION.test(task) && DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
+      if (!taskIsDocument && TEST_GENERATION.test(task) && DISTINCT_SOFTWARE_CONTEXT.test(task)) return true;
     }
     return false;
   }

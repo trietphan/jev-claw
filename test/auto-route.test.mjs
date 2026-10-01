@@ -374,6 +374,29 @@ test("automatic routing passes derived debugging signals to Jev policy", async (
   assert.equal(input.test_status, "failing");
 });
 
+test("automatic routing sends only fixed labels, even when the prefilter admits a private tail", async () => {
+  const sent = [];
+  const { router } = harness(async (value) => { sent.push(value); return decision(); });
+  const prompts = [
+    "Write a REST service documentation generator in Python for staff salaries and layoffs",
+    "Write a function to build a web service for the confidential hiring plan",
+    "Write code to test the REST service for the confidential hiring plan",
+    "Write a test report and review the confidential report, then fix the checkout API code",
+    "Debug the websocket bug after five failed attempts; tests are still failing",
+  ];
+  for (const [index, prompt] of prompts.entries()) {
+    await router.beforePromptBuild({ prompt, messages: [] }, { runId: "safe-" + index }, config);
+  }
+  assert.equal(sent.length, prompts.length);
+  for (const value of sent) {
+    assert.match(value.task, /^Software engineering request:/);
+    assert.doesNotMatch(value.task, /staff|salaries|layoffs|confidential|hiring|checkout|websocket|report|generator/i);
+    assert.ok(!prompts.includes(value.task));
+  }
+  assert.equal(sent.at(-1).previous_attempts, 5);
+  assert.equal(sent.at(-1).test_status, "failing");
+});
+
 test("qualifying prompt is routed once and stored in run context", async () => {
   let calls = 0;
   const { router } = harness(async () => { calls += 1; return decision(); });

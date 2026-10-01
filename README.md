@@ -207,7 +207,10 @@ the fact instead of being an opaque vibe.
 ## Automatic routing (opt in)
 
 Automatic routing is disabled by default because `before_prompt_build` must read the current
-prompt and sends qualifying task text to TypeSafe. Enable it explicitly:
+prompt locally. Qualifying requests send only fixed, locally derived task labels and
+debugging signals to TypeSafe, not the free-form prompt. This sacrifices some routing
+precision to protect conversation text; manual `jev_route` still sends the task
+description you explicitly provide. Enable automatic routing explicitly:
 
 ```jsonc
 {
@@ -248,8 +251,8 @@ Restart the Gateway after changing plugin configuration.
 
 The hook never runs for obvious greetings, writing-only requests, simple status/read/run commands,
 or prompts without both an engineering action and software context. The prefilter is intentionally
-conservative: false negatives cost one manual `jev_route` call; false positives send unrelated
-conversation text to an external service.
+conservative: false negatives cost one manual `jev_route` call; false positives still
+consume an external request, but cannot send the free-form conversation text.
 
 For debugging prompts, the hook deterministically extracts explicit attempt counts and passing/
 failing test signals (for example, “after five failed attempts; tests still failing”) so the normal
@@ -259,10 +262,10 @@ debugger → critic → frontier escalation policy remains available. It does no
 
 - Raw prompts are never written to the plugin cache or warning logs; the cache key is a truncated
   SHA-256 digest and expires after `cacheTtlMs`.
-- Prompt text is sent only to TypeSafe when the local prefilter matches. Ambiguous class,
-  component, and human-assessment requests are skipped without software evidence (such as JSON
-  or React for code, or an API immediately qualifying a human-domain test subject). `jev_route`
-  remains available manually.
+- Automatic requests send only fixed, locally derived category, software surface and risk
+  labels plus structured debugging signals to TypeSafe; no free-form prompt text is sent.
+  Ambiguous class, component, and human-assessment requests are also skipped locally.
+  `jev_route` remains available for an explicit full-task request.
 - Injected context contains only the typed decision, never the original prompt or TypeSafe error
   body, and labels itself as host-generated policy context.
 - The hook grants no tools, permissions or authority.

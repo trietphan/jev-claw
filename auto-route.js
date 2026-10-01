@@ -204,6 +204,25 @@ function promptKey(prompt) {
   return createHash("sha256").update(prompt).digest("hex").slice(0, 20);
 }
 
+// Automatic routing must never transmit free-form conversation text. Every
+// value below is a fixed label chosen locally; manual jev_route remains the
+// explicit path for sending a full task description.
+export function automaticTaskSummary(prompt) {
+  const category = /\b(debug|fix|bug|sửa lỗi)\b/i.test(prompt) ? "debugging"
+    : /\b(test|tests|testing|kiểm thử)\b/i.test(prompt) ? "testing"
+    : /\b(review|audit|đánh giá)\b/i.test(prompt) ? "code review"
+    : /\b(design|architect|thiết kế)\b/i.test(prompt) ? "software design"
+    : "implementation";
+  const surface = /\b(rest|web|http|grpc)\s+services?\b|\bmicroservices?\b/i.test(prompt) ? "software service"
+    : /\b(api|endpoint|sdk)\b/i.test(prompt) ? "API"
+    : /\b(database|schema|migration)\b/i.test(prompt) ? "data layer"
+    : /\b(frontend|react|component|giao diện)\b/i.test(prompt) ? "frontend"
+    : "software code";
+  const risk = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant)\b/i.test(prompt)
+    ? "potentially high-risk change" : "risk not established";
+  return `Software engineering request: ${category} for ${surface}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
+}
+
 export function fallbackDecision(route, category = "jev_unavailable") {
   return {
     task_type: "implementation",
@@ -265,7 +284,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       try {
         decision = {
           ...(await routeTask(
-            { task: event.prompt, ...deriveRoutingSignals(event.prompt) },
+            { task: automaticTaskSummary(event.prompt), ...deriveRoutingSignals(event.prompt) },
             { timeoutMs: config.timeoutMs },
           )),
           source: "jev",

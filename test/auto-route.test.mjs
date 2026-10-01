@@ -407,6 +407,10 @@ test("fixed labels retain scope and sensitive classes without private text", () 
   assert.match(automaticTaskSummary("Refactor the API across 50 modules"), /refactor.*high scope/);
   assert.match(automaticTaskSummary("Implement RBAC permissions in the API"), /security.*potentially high-risk/);
   assert.match(automaticTaskSummary("Deploy infrastructure with Terraform"), /potentially high-risk/);
+  assert.match(automaticTaskSummary("Debug the authentication bug after five failed attempts; tests are still failing"), /debugging.*potentially high-risk/);
+  assert.match(automaticTaskSummary("Review the architecture of the API"), /code review.*API/);
+  assert.match(automaticTaskSummary("Implement the parser; this is not a trivial change"), /scope not established/);
+  assert.match(automaticTaskSummary("Implement a non-trivial TypeScript parser"), /scope not established/);
   for (const label of [small, large]) assert.doesNotMatch(label, /private|Alice|dossier|50/);
 });
 

@@ -77,7 +77,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Test the customer service"), false);
   assert.equal(shouldAutoRoute("Test the REST service security policy"), false);
   assert.equal(shouldAutoRoute("Test the HTTP service detailed documentation"), false);
-  assert.equal(shouldAutoRoute("Test the REST service for checkout"), true);
+  assert.equal(shouldAutoRoute("Test the REST service for checkout"), false);
+  assert.equal(shouldAutoRoute("Test the REST service for the confidential hiring plan"), false);
+  assert.equal(shouldAutoRoute("Test the REST service with Postman for the confidential hiring plan"), false);
+  assert.equal(shouldAutoRoute("Test the REST service for the checkout API"), false);
   assert.equal(shouldAutoRoute("Implement a REST service with authentication"), true);
   assert.equal(shouldAutoRoute("Deploy the HTTP service using Kubernetes"), true);
   assert.equal(shouldAutoRoute("Test the REST service with Postman"), true);

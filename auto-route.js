@@ -18,6 +18,8 @@ const CODE_GENERATION =
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?=\s*(?:$|[,.!?;]|(?:for|to|that|which)\b|with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)\b|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)\b))/i;
 const SERVICE_WRITE = /^\s*write\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
+const SERVICE_TEST = /^\s*test\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
+const SERVICE_TEST_EXPLICIT = /^\s*test\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?:(?:with|using)\s+(?:postman|curl)))?\s*[.!?]?\s*$/i;
 const SERVICE_DOCUMENT = /^\s*(?:write|draft|test|implement|build|fix|debug|refactor|deploy|design|migrate|update)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?!(?:and|then|for|to|with|using)\b)[\p{L}\p{N}-]+)*\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b/iu;
 const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
 const TEST_CONTINUATION_CONTEXT =
@@ -63,6 +65,9 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
+  // A qualified test may ask for a private document or human assessment. Do
+  // not send its raw tail to TypeSafe unless the entire test target is explicit.
+  if (SERVICE_TEST.test(text) && !SERVICE_TEST_EXPLICIT.test(text)) return false;
   const serviceDocument = text.match(SERVICE_DOCUMENT);
   const serviceGenerator = serviceDocument && /^\s+(?:generator|tool|script)\s+(?:in|using)\s+(?:typescript|javascript|python|react)\b/i.test(text.slice(serviceDocument[0].length));
   if (serviceDocument && !serviceGenerator) return false;

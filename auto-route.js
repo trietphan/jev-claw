@@ -17,9 +17,8 @@ const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?=\s*(?:$|[,.!?;]|(?:for|to|that|which)\b|with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)\b|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)\b))/i;
-const SERVICE_WRITE = /^\s*write\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
-const SERVICE_TEST = /^\s*test\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
-const SERVICE_TEST_EXPLICIT = /^\s*test\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?:(?:with|using)\s+(?:postman|curl)))?\s*[.!?]?\s*$/i;
+const SERVICE_ACTION = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
+const SERVICE_ACTION_EXPLICIT = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?:with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)))?\s*[.!?]*\s*$/i;
 const SERVICE_DOCUMENT = /^\s*(?:write|draft|test|implement|build|fix|debug|refactor|deploy|design|migrate|update)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?!(?:and|then|for|to|with|using)\b)[\p{L}\p{N}-]+)*\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b/iu;
 const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
 const TEST_CONTINUATION_CONTEXT =
@@ -65,13 +64,12 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
-  // A qualified test may ask for a private document or human assessment. Do
-  // not send its raw tail to TypeSafe unless the entire test target is explicit.
-  if (SERVICE_TEST.test(text) && !SERVICE_TEST_EXPLICIT.test(text)) return false;
   const serviceDocument = text.match(SERVICE_DOCUMENT);
   const serviceGenerator = serviceDocument && /^\s+(?:generator|tool|script)\s+(?:in|using)\s+(?:typescript|javascript|python|react)\b/i.test(text.slice(serviceDocument[0].length));
   if (serviceDocument && !serviceGenerator) return false;
-  if (SERVICE_WRITE.test(text) && !DIRECT_SOFTWARE_SERVICE.test(text) && !serviceGenerator) return false;
+  // A qualified service action can carry a private document or human-domain
+  // tail; only send the complete raw prompt when its whole shape is explicit.
+  if (SERVICE_ACTION.test(text) && !SERVICE_ACTION_EXPLICIT.test(text) && !serviceGenerator) return false;
   for (const humanSubject of text.matchAll(HUMAN_TEST_SUBJECT)) {
     if (/\b(?:confidential|private|sensitive)\b/i.test(humanSubject[0])) return false;
     if (!/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(

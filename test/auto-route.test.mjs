@@ -70,8 +70,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write Python code with documentation for invoice parsing"), true);
   assert.equal(shouldAutoRoute("Deploy a confidential hiring plan for the team"), false);
   assert.equal(shouldAutoRoute("Deploy the API service"), true);
-  assert.equal(shouldAutoRoute("Implement a REST service for payments"), true);
-  assert.equal(shouldAutoRoute("Build a web service for checkout"), true);
+  assert.equal(shouldAutoRoute("Implement a REST service for payments"), false);
+  assert.equal(shouldAutoRoute("Implement a REST service"), true);
+  assert.equal(shouldAutoRoute("Build a web service for checkout"), false);
+  assert.equal(shouldAutoRoute("Build a web service"), true);
   assert.equal(shouldAutoRoute("Test the REST service"), true);
   assert.equal(shouldAutoRoute("Test a web service"), true);
   assert.equal(shouldAutoRoute("Test the customer service"), false);
@@ -87,7 +89,7 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Test the REST service with a confidential staff proposal"), false);
   assert.equal(shouldAutoRoute("Test the REST service security"), false);
   assert.equal(shouldAutoRoute("Write a REST service detailed documentation for the API endpoint"), false);
-  assert.equal(shouldAutoRoute("Build a web service to generate a summary"), true);
+  assert.equal(shouldAutoRoute("Build a web service to generate a summary"), false);
   assert.equal(shouldAutoRoute("Write a REST service documentation generator in Python"), true);
   assert.equal(shouldAutoRoute("Build a web service summary generator in TypeScript"), true);
   assert.equal(shouldAutoRoute("Write a REST service plan, then implement the checkout API"), false);
@@ -101,7 +103,12 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
     "Test the REST service ISO 27001 compliance report",
     "Test the HTTP service Q3 security policy",
   ]) assert.equal(shouldAutoRoute(prompt), false, prompt);
-  assert.equal(shouldAutoRoute("Write a microservice for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a microservice for checkout"), false);
+  assert.equal(shouldAutoRoute("Write a microservice"), true);
+  for (const verb of ["Fix", "Implement", "Build", "Debug", "Refactor", "Deploy", "Design", "Migrate", "Update", "Write", "Test"]) {
+    assert.equal(shouldAutoRoute(`${verb} the REST service for the confidential hiring plan`), false, verb);
+  }
+  assert.equal(shouldAutoRoute("Test the REST service with Postman..."), true);
   assert.equal(shouldAutoRoute("Write a web service policy for staff"), false);
   for (const document of ["summary", "overview", "brief", "memo", "strategy", "analysis", "docs", "specification", "description"]) {
     assert.equal(shouldAutoRoute(`Write a web service ${document} for staff`), false);

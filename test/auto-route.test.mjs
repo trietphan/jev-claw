@@ -77,9 +77,18 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Test the customer service"), false);
   assert.equal(shouldAutoRoute("Test the REST service security policy"), false);
   assert.equal(shouldAutoRoute("Test the HTTP service detailed documentation"), false);
-  assert.equal(shouldAutoRoute("Test the REST service security"), true);
+  assert.equal(shouldAutoRoute("Test the REST service for checkout"), true);
+  assert.equal(shouldAutoRoute("Test the REST service security"), false);
   assert.equal(shouldAutoRoute("Write a REST service detailed documentation for the API endpoint"), false);
   assert.equal(shouldAutoRoute("Build a web service to generate a summary"), true);
+  for (const prompt of [
+    "Write a web service proposal for staff",
+    "Write a web service FAQ for staff",
+    "Write a REST service runbook for the checkout API",
+    "Write a web service proposal for the confidential layoff plan",
+    "Write a REST service annual confidential security compliance audit report",
+    "Write a web service monthly customer satisfaction survey summary",
+  ]) assert.equal(shouldAutoRoute(prompt), false, prompt);
   assert.equal(shouldAutoRoute("Write a microservice for checkout"), true);
   assert.equal(shouldAutoRoute("Write a web service policy for staff"), false);
   for (const document of ["summary", "overview", "brief", "memo", "strategy", "analysis", "docs", "specification", "description"]) {
@@ -100,6 +109,8 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write tests for candidates in the frontend team"), false);
   assert.equal(shouldAutoRoute("Write tests for our confidential candidates in the frontend team"), false);
   assert.equal(shouldAutoRoute("Write tests for new prospective employees in the backend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for the new backend junior senior candidates"), false);
+  assert.equal(shouldAutoRoute("Write tests for the new remote junior backend engineering candidates"), false);
   assert.equal(shouldAutoRoute("Write tests for our confidential employee API"), false);
   assert.equal(shouldAutoRoute("Write tests for the employee API"), true);
   assert.equal(shouldAutoRoute("Write tests for the candidates endpoint"), true);

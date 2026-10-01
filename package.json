@@ -1,6 +1,6 @@
 {
   "name": "jev-claw",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Typed model-routing for OpenClaw agents, powered by TypeSafe Jev",
   "type": "module",
   "license": "MIT",

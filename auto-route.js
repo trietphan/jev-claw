@@ -17,6 +17,7 @@ const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?=\s*(?:$|[,.!?;]|(?:for|to|that|which)\b|with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)\b|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)\b))/i;
+const SENSITIVE_RISK = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant|rbac|permissions?|credentials?|tokens?|infrastructure|infra|terraform|stripe|deploy(?:ment)?)\b|(?:^|[\s/])\.env\b/i;
 const SERVICE_ACTION = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
 const SERVICE_ACTION_EXPLICIT = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?:with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)))?\s*[.!?]*\s*$/i;
 const SERVICE_DOCUMENT = /^\s*(?:write|draft|test|implement|build|fix|debug|refactor|deploy|design|migrate|update)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?!(?:and|then|for|to|with|using)\b)[\p{L}\p{N}-]+)*\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b/iu;
@@ -208,7 +209,12 @@ function promptKey(prompt) {
 // value below is a fixed label chosen locally; manual jev_route remains the
 // explicit path for sending a full task description.
 export function automaticTaskSummary(prompt) {
-  const category = /\b(debug|fix|bug|sửa lỗi)\b/i.test(prompt) ? "debugging"
+  const category = /^\s*(?:(?:please|kindly)\s+|(?:can|could|would)\s+you\s+)?(?:debug|fix|sửa lỗi)\b/i.test(prompt) ? "debugging"
+    : /^\s*(?:(?:please|kindly)\s+|(?:can|could|would)\s+you\s+)?(?:review|audit|đánh giá)\b/i.test(prompt) ? "code review"
+    : /\brefactor\b/i.test(prompt) ? "refactor"
+    : /\b(architect|architecture|system design)\b/i.test(prompt) ? "architecture"
+    : /\b(security|auth|authentication|authorization|rbac|permissions?|credentials?|secrets?|tokens?)\b/i.test(prompt) ? "security"
+    : /\b(debug|fix|bug|sửa lỗi)\b/i.test(prompt) ? "debugging"
     : /\b(test|tests|testing|kiểm thử)\b/i.test(prompt) ? "testing"
     : /\b(review|audit|đánh giá)\b/i.test(prompt) ? "code review"
     : /\b(design|architect|thiết kế)\b/i.test(prompt) ? "software design"
@@ -218,9 +224,24 @@ export function automaticTaskSummary(prompt) {
     : /\b(database|schema|migration)\b/i.test(prompt) ? "data layer"
     : /\b(frontend|react|component|giao diện)\b/i.test(prompt) ? "frontend"
     : "software code";
-  const risk = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant)\b/i.test(prompt)
+  const complexity = /\b(major|large|complex|cross-cutting|multi-service|rewrite|system-wide)\b|\b(?:[2-9]\d|[1-9]\d{2,})\s+(?:files|modules|services)\b/i.test(prompt)
+    ? "high scope" : /\b(?:(?:not|isn.t|never)\s+(?:a\s+)?|non[- ]?)(?:one-line|tiny|trivial|isolated|small change)\b/i.test(prompt)
+      ? "scope not established" : /\b(one-line|tiny|trivial|isolated|small change)\b/i.test(prompt)
+        ? "low scope" : "scope not established";
+  const risk = SENSITIVE_RISK.test(prompt)
     ? "potentially high-risk change" : "risk not established";
-  return `Software engineering request: ${category} for ${surface}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
+  return `Software engineering request: ${category} for ${surface}; ${complexity}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
+}
+
+// Only a narrow debugging request has enough locally verifiable information
+// to enforce an abstracted Jev decision. Other categories remain guidance.
+function trustedAutomaticDecision(prompt, decision) {
+  // This full-string grammar does not admit a second task, sensitive target,
+  // arbitrary tail, or implicit debugging history. Everything else fails open.
+  const isolatedDebug = /^\s*debug\s+(?:the\s+)?(?:failing\s+)?(?:websocket|typescript|javascript|python|react)\s+(?:bug|test|issue|error)(?:\s+in\s+the\s+repository)?[.!?]?\s*$/i;
+  return isolatedDebug.test(prompt) && !SENSITIVE_RISK.test(prompt) &&
+    decision.task_type === "debugging" && ["low", "medium"].includes(decision.risk) &&
+    decision.route === "debugger";
 }
 
 export function fallbackDecision(route, category = "jev_unavailable") {
@@ -276,6 +297,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
     if (existing?.decision) return { appendSystemContext: routingContext(existing.decision) };
 
     const key = promptKey(event.prompt);
+    const signals = deriveRoutingSignals(event.prompt);
     const cached = cache.get(key);
     let decision;
     if (cached && cached.expiresAt > now()) {
@@ -284,7 +306,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       try {
         decision = {
           ...(await routeTask(
-            { task: automaticTaskSummary(event.prompt), ...deriveRoutingSignals(event.prompt) },
+            { task: automaticTaskSummary(event.prompt), ...signals },
             { timeoutMs: config.timeoutMs },
           )),
           source: "jev",
@@ -296,7 +318,11 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       }
       cacheDecision(key, decision, now() + config.cacheTtlMs);
     }
-    writeRunDecision(ctx.runId, { decision, promptKey: key, createdAt: now() });
+    writeRunDecision(ctx.runId, {
+      decision, promptKey: key, sanitized: true,
+      safeForEnforcement: trustedAutomaticDecision(event.prompt, decision),
+      createdAt: now(),
+    });
     return { appendSystemContext: routingContext(decision) };
   }
 
@@ -308,6 +334,9 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       return;
     }
     const record = readRunDecision(runId);
+    // Fixed labels protect privacy but omit details needed for a hard decision.
+    // A confident guess must never block a better-informed host delegation.
+    if (!record?.safeForEnforcement) return;
     const decision = record?.decision;
     // Missing, fallback, or uncertain decisions fail open. The prompt note still guides the model.
     if (!decision || decision.source !== "jev" || decision.confidence < config.minConfidence) return;

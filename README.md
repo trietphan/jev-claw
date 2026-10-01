@@ -244,10 +244,11 @@ Restart the Gateway after changing plugin configuration.
 
 - `guidance` (recommended first): injects the typed decision into host policy context. It never
   blocks a tool call.
-- `enforce`: also blocks a `sessions_spawn` call that explicitly chooses a different `agentId`,
-  but only when the Jev decision meets `minConfidence`. Both the primary route and its recommended
-  independent second-opinion route are allowed. Missing, timed-out, failed, fallback and
-  low-confidence decisions fail open.
+- `enforce`: blocks a mismatched `sessions_spawn` only for an isolated, single-target
+  debugging request matching the locally verified grammar and a Jev `debugger` decision.
+  Sensitive, mixed, escalated, or uncertain tasks remain guidance, even with high Jev
+  confidence: fixed privacy-safe labels omit details that may justify a different agent.
+  Legacy run decisions without this explicit trust proof also fail open.
 
 The hook never runs for obvious greetings, writing-only requests, simple status/read/run commands,
 or prompts without both an engineering action and software context. The prefilter is intentionally
@@ -273,12 +274,10 @@ debugger → critic → frontier escalation policy remains available. It does no
 - Automatic routing applies only on OpenClaw runtimes that execute typed plugin hooks. The
   standalone `jev_route` tool remains available independently.
 
-Start with `guidance`, inspect routing quality, then opt into `enforce` after your route names match
-real OpenClaw agent IDs. In enforce mode, an omitted `sessions_spawn.agentId` is left alone so the
-host's normal default-agent policy remains authoritative when no model override is supplied.
-Confident Jev decisions block explicit `sessions_spawn.model`, `provider`, and
-`modelFallbacksOverride` values even when `agentId` is omitted or allowed; spawn without overrides to use that agent's configured model. Missing run IDs are logged
-and fail open rather than blocking a call without a decision.
+Start with `guidance` and inspect routing quality. `enforce` is deliberately narrow: only
+locally verified isolated debugger decisions can block mismatched agents or explicit model/provider
+overrides, even when `agentId` is omitted. All other requests stay guidance; do not rely on
+this mode as a general delegation permission gate. Missing run IDs are logged and fail open.
 
 ---
 

@@ -78,6 +78,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Test the REST service security policy"), false);
   assert.equal(shouldAutoRoute("Test the HTTP service detailed documentation"), false);
   assert.equal(shouldAutoRoute("Test the REST service for checkout"), true);
+  assert.equal(shouldAutoRoute("Implement a REST service with authentication"), true);
+  assert.equal(shouldAutoRoute("Deploy the HTTP service using Kubernetes"), true);
+  assert.equal(shouldAutoRoute("Test the REST service with Postman"), true);
+  assert.equal(shouldAutoRoute("Test the REST service with a confidential staff proposal"), false);
   assert.equal(shouldAutoRoute("Test the REST service security"), false);
   assert.equal(shouldAutoRoute("Write a REST service detailed documentation for the API endpoint"), false);
   assert.equal(shouldAutoRoute("Build a web service to generate a summary"), true);
@@ -116,6 +120,8 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write tests for new prospective employees in the backend team"), false);
   assert.equal(shouldAutoRoute("Write tests for the new backend junior senior candidates"), false);
   assert.equal(shouldAutoRoute("Write tests for the new remote junior backend engineering candidates"), false);
+  assert.equal(shouldAutoRoute("Write tests for the frontend registration workflow used by candidates"), true);
+  assert.equal(shouldAutoRoute("Write tests for our frontend component library used by the team"), true);
   assert.equal(shouldAutoRoute("Write tests for our confidential employee API"), false);
   assert.equal(shouldAutoRoute("Write tests for the employee API"), true);
   assert.equal(shouldAutoRoute("Write tests for the candidates endpoint"), true);

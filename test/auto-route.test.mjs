@@ -409,6 +409,11 @@ test("fixed labels retain scope and sensitive classes without private text", () 
   assert.match(automaticTaskSummary("Deploy infrastructure with Terraform"), /potentially high-risk/);
   assert.match(automaticTaskSummary("Debug the authentication bug after five failed attempts; tests are still failing"), /debugging.*potentially high-risk/);
   assert.match(automaticTaskSummary("Review the architecture of the API"), /code review.*API/);
+  assert.match(automaticTaskSummary("Please debug the authentication bug after five failed attempts; tests are still failing"), /debugging.*potentially high-risk/);
+  assert.match(automaticTaskSummary("Can you review the architecture of the API?"), /code review.*API/);
+  for (const subject of ["Stripe checkout bug", ".env API bug", "infra deployment bug"]) {
+    assert.match(automaticTaskSummary("Debug the " + subject), /potentially high-risk/);
+  }
   assert.match(automaticTaskSummary("Implement the parser; this is not a trivial change"), /scope not established/);
   assert.match(automaticTaskSummary("Implement a non-trivial TypeScript parser"), /scope not established/);
   for (const label of [small, large]) assert.doesNotMatch(label, /private|Alice|dossier|50/);
@@ -501,6 +506,10 @@ test("sensitive and inconsistent automatic decisions fail open in enforce mode",
       decision: decision({ task_type: "debugging", risk: "low", route: "debugger", confidence: 0.99 }),
     })),
     { prompt: "Debug the websocket bug", decision: decision({ task_type: "debugging", route: "cheap", confidence: 0.99 }) },
+    { prompt: "Debug the websocket bug, then review the API code", decision: decision({ task_type: "debugging", route: "debugger", confidence: 0.99 }) },
+    { prompt: "Debug the Stripe checkout bug", decision: decision({ task_type: "debugging", risk: "low", route: "debugger", confidence: 0.99 }) },
+    { prompt: "Debug the .env API bug", decision: decision({ task_type: "debugging", risk: "low", route: "debugger", confidence: 0.99 }) },
+    { prompt: "Debug the infra deployment bug", decision: decision({ task_type: "debugging", risk: "low", route: "debugger", confidence: 0.99 }) },
     { prompt: "Implement RBAC permissions in the API", decision: decision({ task_type: "security", route: "reviewer", confidence: 0.99 }) },
   ];
   for (const [index, entry] of cases.entries()) {

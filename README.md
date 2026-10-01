@@ -244,11 +244,11 @@ Restart the Gateway after changing plugin configuration.
 
 - `guidance` (recommended first): injects the typed decision into host policy context. It never
   blocks a tool call.
-- `enforce`: blocks a mismatched `sessions_spawn` only for a narrow debugging request whose
-  route is locally verifiable from explicit attempt and test-status signals and agrees with Jev.
-  Sensitive, mixed or uncertain tasks remain guidance, even with high Jev confidence: fixed
-  privacy-safe labels omit details that may justify a different agent. Legacy run decisions
-  without this explicit trust proof also fail open.
+- `enforce`: blocks a mismatched `sessions_spawn` only for an isolated, single-target
+  debugging request matching the locally verified grammar and a Jev `debugger` decision.
+  Sensitive, mixed, escalated, or uncertain tasks remain guidance, even with high Jev
+  confidence: fixed privacy-safe labels omit details that may justify a different agent.
+  Legacy run decisions without this explicit trust proof also fail open.
 
 The hook never runs for obvious greetings, writing-only requests, simple status/read/run commands,
 or prompts without both an engineering action and software context. The prefilter is intentionally
@@ -275,7 +275,7 @@ debugger → critic → frontier escalation policy remains available. It does no
   standalone `jev_route` tool remains available independently.
 
 Start with `guidance` and inspect routing quality. `enforce` is deliberately narrow: only
-locally verified debugging decisions can block mismatched agents or explicit model/provider
+locally verified isolated debugger decisions can block mismatched agents or explicit model/provider
 overrides, even when `agentId` is omitted. All other requests stay guidance; do not rely on
 this mode as a general delegation permission gate. Missing run IDs are logged and fail open.
 

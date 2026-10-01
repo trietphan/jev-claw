@@ -208,7 +208,10 @@ function promptKey(prompt) {
 // value below is a fixed label chosen locally; manual jev_route remains the
 // explicit path for sending a full task description.
 export function automaticTaskSummary(prompt) {
-  const category = /\b(debug|fix|bug|sửa lỗi)\b/i.test(prompt) ? "debugging"
+  const category = /\b(security|auth|authentication|authorization|rbac|permissions?|credentials?|secrets?|tokens?)\b/i.test(prompt) ? "security"
+    : /\b(architect|architecture|system design)\b/i.test(prompt) ? "architecture"
+    : /\brefactor\b/i.test(prompt) ? "refactor"
+    : /\b(debug|fix|bug|sửa lỗi)\b/i.test(prompt) ? "debugging"
     : /\b(test|tests|testing|kiểm thử)\b/i.test(prompt) ? "testing"
     : /\b(review|audit|đánh giá)\b/i.test(prompt) ? "code review"
     : /\b(design|architect|thiết kế)\b/i.test(prompt) ? "software design"
@@ -218,9 +221,12 @@ export function automaticTaskSummary(prompt) {
     : /\b(database|schema|migration)\b/i.test(prompt) ? "data layer"
     : /\b(frontend|react|component|giao diện)\b/i.test(prompt) ? "frontend"
     : "software code";
-  const risk = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant)\b/i.test(prompt)
+  const complexity = /\b(major|large|complex|cross-cutting|multi-service|rewrite|system-wide)\b|\b(?:[2-9]\d|[1-9]\d{2,})\s+(?:files|modules|services)\b/i.test(prompt)
+    ? "high scope" : /\b(one-line|tiny|trivial|isolated|small change)\b/i.test(prompt)
+      ? "low scope" : "scope not established";
+  const risk = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant|rbac|permissions?|credentials?|tokens?|infrastructure|terraform|deploy(?:ment)?)\b/i.test(prompt)
     ? "potentially high-risk change" : "risk not established";
-  return `Software engineering request: ${category} for ${surface}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
+  return `Software engineering request: ${category} for ${surface}; ${complexity}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
 }
 
 export function fallbackDecision(route, category = "jev_unavailable") {
@@ -296,7 +302,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       }
       cacheDecision(key, decision, now() + config.cacheTtlMs);
     }
-    writeRunDecision(ctx.runId, { decision, promptKey: key, createdAt: now() });
+    writeRunDecision(ctx.runId, { decision, promptKey: key, sanitized: true, createdAt: now() });
     return { appendSystemContext: routingContext(decision) };
   }
 
@@ -308,6 +314,9 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       return;
     }
     const record = readRunDecision(runId);
+    // Fixed labels protect privacy but omit details needed for a hard decision.
+    // A confident guess must never block a better-informed host delegation.
+    if (!record?.safeForEnforcement) return;
     const decision = record?.decision;
     // Missing, fallback, or uncertain decisions fail open. The prompt note still guides the model.
     if (!decision || decision.source !== "jev" || decision.confidence < config.minConfidence) return;

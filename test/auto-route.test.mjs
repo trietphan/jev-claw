@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   AUTO_ROUTE_NAMESPACE,
+  automaticTaskSummary,
   createAutomaticRouter,
   deriveRoutingSignals,
   normalizeAutoRouteConfig,
@@ -397,6 +398,18 @@ test("automatic routing sends only fixed labels, even when the prefilter admits 
   assert.equal(sent.at(-1).test_status, "failing");
 });
 
+test("fixed labels retain scope and sensitive classes without private text", () => {
+  const small = automaticTaskSummary("Implement a one-line TypeScript function for the private Alice dossier");
+  const large = automaticTaskSummary("Implement a major cross-cutting TypeScript change across 50 modules for the private Alice dossier");
+  assert.notEqual(small, large);
+  assert.match(small, /low scope/);
+  assert.match(large, /high scope/);
+  assert.match(automaticTaskSummary("Refactor the API across 50 modules"), /refactor.*high scope/);
+  assert.match(automaticTaskSummary("Implement RBAC permissions in the API"), /security.*potentially high-risk/);
+  assert.match(automaticTaskSummary("Deploy infrastructure with Terraform"), /potentially high-risk/);
+  for (const label of [small, large]) assert.doesNotMatch(label, /private|Alice|dossier|50/);
+});
+
 test("qualifying prompt is routed once and stored in run context", async () => {
   let calls = 0;
   const { router } = harness(async () => { calls += 1; return decision(); });
@@ -444,8 +457,8 @@ test("timeout/error falls back to main, records sanitized warning, and never blo
   );
 });
 
-test("enforce mode permits matching delegation and blocks only confident mismatches", async () => {
-  const { router } = harness(async () => decision({ route: "debugger", confidence: 0.91 }));
+test("lossy automatic decisions stay guidance even in enforce mode", async () => {
+  const { router, runs } = harness(async () => decision({ route: "debugger", confidence: 0.91 }));
   const ctx = { runId: "run-4" };
   await router.beforePromptBuild(
     { prompt: "Debug the failing websocket test in the repository", messages: [] },
@@ -465,8 +478,13 @@ test("enforce mode permits matching delegation and blocks only confident mismatc
     ctx,
     config,
   );
-  assert.equal(blocked.block, true);
-  assert.match(blocked.blockReason, /allows agentId=debugger/);
+  assert.equal(blocked, undefined);
+  runs.get("run-4:" + AUTO_ROUTE_NAMESPACE).safeForEnforcement = true;
+  const trustedBlock = router.beforeToolCall(
+    { toolName: "sessions_spawn", runId: "run-4", params: { agentId: "cheap" } }, ctx, config,
+  );
+  assert.equal(trustedBlock.block, true);
+  assert.match(trustedBlock.blockReason, /allows agentId=debugger/);
   assert.equal(
     router.beforeToolCall(
       { toolName: "exec", runId: "run-4", params: {} },
@@ -477,10 +495,12 @@ test("enforce mode permits matching delegation and blocks only confident mismatc
   );
 });
 
-test("enforce mode blocks explicit model and provider overrides on allowed agent", async () => {
-  const { router, warnings } = harness(async () => decision({ route: "cheap", confidence: 0.91 }));
+test("only explicitly trusted decisions enforce model and provider overrides", async () => {
+  const { router, runs, warnings } = harness(async () => decision({ route: "cheap", confidence: 0.91 }));
   const ctx = { runId: "run-model-override" };
   await router.beforePromptBuild({ prompt: "Fix the checkout API code", messages: [] }, ctx, config);
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "cheap", provider: "anthropic" } }, ctx, config), undefined);
+  runs.get(ctx.runId + ":" + AUTO_ROUTE_NAMESPACE).safeForEnforcement = true;
   for (const overrides of [
     { model: "anthropic/claude-opus-5" },
     { provider: "anthropic" },

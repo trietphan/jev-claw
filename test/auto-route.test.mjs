@@ -496,7 +496,10 @@ test("only locally verified debugger decisions enforce agent choice", async () =
 
 test("sensitive and inconsistent automatic decisions fail open in enforce mode", async () => {
   const cases = [
-    { prompt: "Debug the auth API bug", decision: decision({ task_type: "debugging", route: "debugger", confidence: 0.99 }) },
+    ...["auth API bug", "authentication bug", "authorization bug", "leaked credentials in the API", "secret token in the API", "Terraform deployment", "payment API failure"].map((subject) => ({
+      prompt: "Debug the " + subject + " in the repository",
+      decision: decision({ task_type: "debugging", risk: "low", route: "debugger", confidence: 0.99 }),
+    })),
     { prompt: "Debug the websocket bug", decision: decision({ task_type: "debugging", route: "cheap", confidence: 0.99 }) },
     { prompt: "Implement RBAC permissions in the API", decision: decision({ task_type: "security", route: "reviewer", confidence: 0.99 }) },
   ];
@@ -504,6 +507,7 @@ test("sensitive and inconsistent automatic decisions fail open in enforce mode",
     const { router } = harness(async () => entry.decision);
     const ctx = { runId: "unsafe-" + index };
     await router.beforePromptBuild({ prompt: entry.prompt, messages: [] }, ctx, config);
+    assert.ok(router.readRunDecision(ctx.runId)?.decision, entry.prompt);
     assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "frontier" } }, ctx, config), undefined);
   }
 });

@@ -17,6 +17,7 @@ const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?=\s*(?:$|[,.!?;]|(?:for|to|that|which)\b|with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)\b|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)\b))/i;
+const SENSITIVE_RISK = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant|rbac|permissions?|credentials?|tokens?|infrastructure|terraform|deploy(?:ment)?)\b/i;
 const SERVICE_ACTION = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
 const SERVICE_ACTION_EXPLICIT = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?:with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)))?\s*[.!?]*\s*$/i;
 const SERVICE_DOCUMENT = /^\s*(?:write|draft|test|implement|build|fix|debug|refactor|deploy|design|migrate|update)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?!(?:and|then|for|to|with|using)\b)[\p{L}\p{N}-]+)*\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b/iu;
@@ -227,7 +228,7 @@ export function automaticTaskSummary(prompt) {
     ? "high scope" : /\b(?:(?:not|isn.t|never)\s+(?:a\s+)?|non[- ]?)(?:one-line|tiny|trivial|isolated|small change)\b/i.test(prompt)
       ? "scope not established" : /\b(one-line|tiny|trivial|isolated|small change)\b/i.test(prompt)
         ? "low scope" : "scope not established";
-  const risk = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant|rbac|permissions?|credentials?|tokens?|infrastructure|terraform|deploy(?:ment)?)\b/i.test(prompt)
+  const risk = SENSITIVE_RISK.test(prompt)
     ? "potentially high-risk change" : "risk not established";
   return `Software engineering request: ${category} for ${surface}; ${complexity}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
 }
@@ -236,7 +237,7 @@ export function automaticTaskSummary(prompt) {
 // to enforce an abstracted Jev decision. Other categories remain guidance.
 function trustedAutomaticDecision(prompt, decision, signals) {
   if (!/^\s*debug\s+\b/i.test(prompt) ||
-      /\b(auth|security|rbac|permissions?|payment|billing|migration|production|tenant|architecture|refactor|deploy)\b/i.test(prompt) ||
+      (SENSITIVE_RISK.test(prompt) || /\b(architecture|refactor)\b/i.test(prompt)) ||
       decision.task_type !== "debugging" || !["low", "medium"].includes(decision.risk)) return false;
   const expectedRoute = signals.previous_attempts >= 4 && signals.test_status === "failing" ? "frontier"
     : signals.previous_attempts >= 2 ? "claude-critic" : "debugger";

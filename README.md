@@ -245,7 +245,8 @@ Restart the Gateway after changing plugin configuration.
 - `guidance` (recommended first): injects the typed decision into host policy context. It never
   blocks a tool call.
 - `enforce`: blocks a mismatched `sessions_spawn` only for an isolated, single-target
-  debugging request matching the locally verified grammar and a Jev `debugger` decision.
+  debugging request matching the locally verified grammar, a Jev `debugger` decision,
+  and a provably empty prior-message history. Missing history or any prior message fails open.
   Sensitive, mixed, escalated, or uncertain tasks remain guidance, even with high Jev
   confidence: fixed privacy-safe labels omit details that may justify a different agent.
   Legacy run decisions without this explicit trust proof also fail open.

@@ -521,6 +521,36 @@ test("sensitive and inconsistent automatic decisions fail open in enforce mode",
   }
 });
 
+test("debug follow-ups and missing history cannot inherit a hard-block proof", async () => {
+  const prompt = "Debug the JavaScript error";
+  for (const [index, messages] of [
+    [{ role: "user", content: "Payment authorization is broken" }],
+    undefined,
+  ].entries()) {
+    const { router } = harness(async () => decision({ task_type: "debugging", route: "debugger", confidence: 0.99 }));
+    const ctx = { runId: "history-" + index };
+    await router.beforePromptBuild({ prompt, ...(messages ? { messages } : {}) }, ctx, config);
+    assert.equal(router.readRunDecision(ctx.runId)?.safeForEnforcement, false);
+    assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "reviewer" } }, ctx, config), undefined);
+  }
+  const { router } = harness(async () => decision({ task_type: "debugging", route: "debugger", confidence: 0.99 }));
+  const ctx = { runId: "history-rebuild" };
+  await router.beforePromptBuild({ prompt, messages: [] }, ctx, config);
+  assert.equal(router.readRunDecision(ctx.runId)?.safeForEnforcement, true);
+  await router.beforePromptBuild({ prompt, messages: [{ role: "user", content: "Review payment authorization" }] }, ctx, config);
+  assert.equal(router.readRunDecision(ctx.runId)?.safeForEnforcement, false);
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "reviewer" } }, ctx, config), undefined);
+
+  const other = { runId: "changed-prompt" };
+  await router.beforePromptBuild({ prompt, messages: [] }, other, config);
+  assert.equal(router.readRunDecision(other.runId)?.safeForEnforcement, true);
+  await router.beforePromptBuild({ prompt: "Write a poem", messages: [] }, other, config);
+  assert.equal(router.readRunDecision(other.runId)?.safeForEnforcement, false);
+  await router.beforePromptBuild({ prompt: "Implement RBAC permissions in the API", messages: [] }, other, config);
+  assert.equal(router.readRunDecision(other.runId)?.safeForEnforcement, false);
+  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "reviewer" } }, other, config), undefined);
+});
+
 test("verified debugger decisions reject model and provider overrides", async () => {
   const { router, warnings } = harness(async () => decision({ task_type: "debugging", route: "debugger", confidence: 0.91 }));
   const ctx = { runId: "run-model-override" };

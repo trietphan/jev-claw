@@ -292,11 +292,25 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
   }
 
   async function beforePromptBuild(event, ctx, config) {
-    if (!config.enabled || !shouldAutoRoute(event.prompt)) return;
+    if (!config.enabled) return;
     const existing = readRunDecision(ctx.runId);
-    if (existing?.decision) return { appendSystemContext: routingContext(existing.decision) };
-
+    if (!shouldAutoRoute(event.prompt)) {
+      if (existing?.safeForEnforcement) {
+        writeRunDecision(ctx.runId, { ...existing, safeForEnforcement: false });
+      }
+      return;
+    }
+    // The bounded current-turn label cannot encode earlier conversation. If
+    // history is missing or present, agent choice may depend on withheld facts.
+    const standalone = Array.isArray(event.messages) && event.messages.length === 0;
     const key = promptKey(event.prompt);
+    if (existing?.decision && existing.promptKey === key) {
+      if (!standalone && existing.safeForEnforcement) {
+        writeRunDecision(ctx.runId, { ...existing, safeForEnforcement: false });
+      }
+      return { appendSystemContext: routingContext(existing.decision) };
+    }
+
     const signals = deriveRoutingSignals(event.prompt);
     const cached = cache.get(key);
     let decision;
@@ -320,7 +334,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
     }
     writeRunDecision(ctx.runId, {
       decision, promptKey: key, sanitized: true,
-      safeForEnforcement: trustedAutomaticDecision(event.prompt, decision),
+      safeForEnforcement: standalone && trustedAutomaticDecision(event.prompt, decision),
       createdAt: now(),
     });
     return { appendSystemContext: routingContext(decision) };

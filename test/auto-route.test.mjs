@@ -70,21 +70,26 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write Python code with documentation for invoice parsing"), true);
   assert.equal(shouldAutoRoute("Deploy a confidential hiring plan for the team"), false);
   assert.equal(shouldAutoRoute("Deploy the API service"), true);
-  assert.equal(shouldAutoRoute("Implement a REST service for payments"), true);
-  assert.equal(shouldAutoRoute("Build a web service for checkout"), true);
+  assert.equal(shouldAutoRoute("Implement a REST service for payments"), false);
+  assert.equal(shouldAutoRoute("Implement a REST service"), true);
+  assert.equal(shouldAutoRoute("Build a web service for checkout"), false);
+  assert.equal(shouldAutoRoute("Build a web service"), true);
   assert.equal(shouldAutoRoute("Test the REST service"), true);
   assert.equal(shouldAutoRoute("Test a web service"), true);
   assert.equal(shouldAutoRoute("Test the customer service"), false);
   assert.equal(shouldAutoRoute("Test the REST service security policy"), false);
   assert.equal(shouldAutoRoute("Test the HTTP service detailed documentation"), false);
-  assert.equal(shouldAutoRoute("Test the REST service for checkout"), true);
+  assert.equal(shouldAutoRoute("Test the REST service for checkout"), false);
+  assert.equal(shouldAutoRoute("Test the REST service for the confidential hiring plan"), false);
+  assert.equal(shouldAutoRoute("Test the REST service with Postman for the confidential hiring plan"), false);
+  assert.equal(shouldAutoRoute("Test the REST service for the checkout API"), false);
   assert.equal(shouldAutoRoute("Implement a REST service with authentication"), true);
   assert.equal(shouldAutoRoute("Deploy the HTTP service using Kubernetes"), true);
   assert.equal(shouldAutoRoute("Test the REST service with Postman"), true);
   assert.equal(shouldAutoRoute("Test the REST service with a confidential staff proposal"), false);
   assert.equal(shouldAutoRoute("Test the REST service security"), false);
   assert.equal(shouldAutoRoute("Write a REST service detailed documentation for the API endpoint"), false);
-  assert.equal(shouldAutoRoute("Build a web service to generate a summary"), true);
+  assert.equal(shouldAutoRoute("Build a web service to generate a summary"), false);
   assert.equal(shouldAutoRoute("Write a REST service documentation generator in Python"), true);
   assert.equal(shouldAutoRoute("Build a web service summary generator in TypeScript"), true);
   assert.equal(shouldAutoRoute("Write a REST service plan, then implement the checkout API"), false);
@@ -98,7 +103,12 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
     "Test the REST service ISO 27001 compliance report",
     "Test the HTTP service Q3 security policy",
   ]) assert.equal(shouldAutoRoute(prompt), false, prompt);
-  assert.equal(shouldAutoRoute("Write a microservice for checkout"), true);
+  assert.equal(shouldAutoRoute("Write a microservice for checkout"), false);
+  assert.equal(shouldAutoRoute("Write a microservice"), true);
+  for (const verb of ["Fix", "Implement", "Build", "Debug", "Refactor", "Deploy", "Design", "Migrate", "Update", "Write", "Test"]) {
+    assert.equal(shouldAutoRoute(`${verb} the REST service for the confidential hiring plan`), false, verb);
+  }
+  assert.equal(shouldAutoRoute("Test the REST service with Postman..."), true);
   assert.equal(shouldAutoRoute("Write a web service policy for staff"), false);
   for (const document of ["summary", "overview", "brief", "memo", "strategy", "analysis", "docs", "specification", "description"]) {
     assert.equal(shouldAutoRoute(`Write a web service ${document} for staff`), false);
@@ -362,6 +372,29 @@ test("automatic routing passes derived debugging signals to Jev policy", async (
   );
   assert.equal(input.previous_attempts, 5);
   assert.equal(input.test_status, "failing");
+});
+
+test("automatic routing sends only fixed labels, even when the prefilter admits a private tail", async () => {
+  const sent = [];
+  const { router } = harness(async (value) => { sent.push(value); return decision(); });
+  const prompts = [
+    "Write a REST service documentation generator in Python for staff salaries and layoffs",
+    "Write a function to build a web service for the confidential hiring plan",
+    "Write code to test the REST service for the confidential hiring plan",
+    "Write a test report and review the confidential report, then fix the checkout API code",
+    "Debug the websocket bug after five failed attempts; tests are still failing",
+  ];
+  for (const [index, prompt] of prompts.entries()) {
+    await router.beforePromptBuild({ prompt, messages: [] }, { runId: "safe-" + index }, config);
+  }
+  assert.equal(sent.length, prompts.length);
+  for (const value of sent) {
+    assert.match(value.task, /^Software engineering request:/);
+    assert.doesNotMatch(value.task, /staff|salaries|layoffs|confidential|hiring|checkout|websocket|report|generator/i);
+    assert.ok(!prompts.includes(value.task));
+  }
+  assert.equal(sent.at(-1).previous_attempts, 5);
+  assert.equal(sent.at(-1).test_status, "failing");
 });
 
 test("qualifying prompt is routed once and stored in run context", async () => {

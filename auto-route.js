@@ -17,7 +17,8 @@ const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
 const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?=\s*(?:$|[,.!?;]|(?:for|to|that|which)\b|with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)\b|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)\b))/i;
-const SERVICE_WRITE = /^\s*write\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
+const SERVICE_ACTION = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
+const SERVICE_ACTION_EXPLICIT = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?:with\s+(?:authentication|authorization|auth|postman|curl|docker|kubernetes|code|api|endpoint)|using\s+(?:postman|curl|docker|kubernetes|typescript|javascript|python)))?\s*[.!?]*\s*$/i;
 const SERVICE_DOCUMENT = /^\s*(?:write|draft|test|implement|build|fix|debug|refactor|deploy|design|migrate|update)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?!(?:and|then|for|to|with|using)\b)[\p{L}\p{N}-]+)*\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b/iu;
 const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
 const TEST_CONTINUATION_CONTEXT =
@@ -66,7 +67,9 @@ export function shouldAutoRoute(prompt) {
   const serviceDocument = text.match(SERVICE_DOCUMENT);
   const serviceGenerator = serviceDocument && /^\s+(?:generator|tool|script)\s+(?:in|using)\s+(?:typescript|javascript|python|react)\b/i.test(text.slice(serviceDocument[0].length));
   if (serviceDocument && !serviceGenerator) return false;
-  if (SERVICE_WRITE.test(text) && !DIRECT_SOFTWARE_SERVICE.test(text) && !serviceGenerator) return false;
+  // A qualified service action can carry a private document or human-domain
+  // tail; only send the complete raw prompt when its whole shape is explicit.
+  if (SERVICE_ACTION.test(text) && !SERVICE_ACTION_EXPLICIT.test(text) && !serviceGenerator) return false;
   for (const humanSubject of text.matchAll(HUMAN_TEST_SUBJECT)) {
     if (/\b(?:confidential|private|sensitive)\b/i.test(humanSubject[0])) return false;
     if (!/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(
@@ -201,6 +204,25 @@ function promptKey(prompt) {
   return createHash("sha256").update(prompt).digest("hex").slice(0, 20);
 }
 
+// Automatic routing must never transmit free-form conversation text. Every
+// value below is a fixed label chosen locally; manual jev_route remains the
+// explicit path for sending a full task description.
+export function automaticTaskSummary(prompt) {
+  const category = /\b(debug|fix|bug|sửa lỗi)\b/i.test(prompt) ? "debugging"
+    : /\b(test|tests|testing|kiểm thử)\b/i.test(prompt) ? "testing"
+    : /\b(review|audit|đánh giá)\b/i.test(prompt) ? "code review"
+    : /\b(design|architect|thiết kế)\b/i.test(prompt) ? "software design"
+    : "implementation";
+  const surface = /\b(rest|web|http|grpc)\s+services?\b|\bmicroservices?\b/i.test(prompt) ? "software service"
+    : /\b(api|endpoint|sdk)\b/i.test(prompt) ? "API"
+    : /\b(database|schema|migration)\b/i.test(prompt) ? "data layer"
+    : /\b(frontend|react|component|giao diện)\b/i.test(prompt) ? "frontend"
+    : "software code";
+  const risk = /\b(auth|authentication|authorization|security|secrets?|payments?|billing|migration|production|tenant)\b/i.test(prompt)
+    ? "potentially high-risk change" : "risk not established";
+  return `Software engineering request: ${category} for ${surface}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
+}
+
 export function fallbackDecision(route, category = "jev_unavailable") {
   return {
     task_type: "implementation",
@@ -262,7 +284,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       try {
         decision = {
           ...(await routeTask(
-            { task: event.prompt, ...deriveRoutingSignals(event.prompt) },
+            { task: automaticTaskSummary(event.prompt), ...deriveRoutingSignals(event.prompt) },
             { timeoutMs: config.timeoutMs },
           )),
           source: "jev",

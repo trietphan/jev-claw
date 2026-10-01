@@ -75,11 +75,17 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Test the REST service"), true);
   assert.equal(shouldAutoRoute("Test a web service"), true);
   assert.equal(shouldAutoRoute("Test the customer service"), false);
+  assert.equal(shouldAutoRoute("Test the REST service security policy"), false);
+  assert.equal(shouldAutoRoute("Test the HTTP service detailed documentation"), false);
+  assert.equal(shouldAutoRoute("Test the REST service security"), true);
+  assert.equal(shouldAutoRoute("Write a REST service detailed documentation for the API endpoint"), false);
+  assert.equal(shouldAutoRoute("Build a web service to generate a summary"), true);
   assert.equal(shouldAutoRoute("Write a microservice for checkout"), true);
   assert.equal(shouldAutoRoute("Write a web service policy for staff"), false);
   for (const document of ["summary", "overview", "brief", "memo", "strategy", "analysis", "docs", "specification", "description"]) {
     assert.equal(shouldAutoRoute(`Write a web service ${document} for staff`), false);
     assert.equal(shouldAutoRoute(`Write a REST service ${document} for the checkout API`), false);
+    assert.equal(shouldAutoRoute(`Write a REST service detailed ${document} for the checkout API`), false);
   }
   assert.equal(shouldAutoRoute("Review our customer service policy"), false);
   assert.equal(shouldAutoRoute("Run npm test in the repo"), false);

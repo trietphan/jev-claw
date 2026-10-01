@@ -16,7 +16,8 @@ const WRITING_ONLY =
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
-const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?!\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b)/i;
+const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b/i;
+const SERVICE_DOCUMENT = /^\s*(?:write|draft|test|implement|build|fix|debug|refactor|deploy|design|migrate|update)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?:\s+(?!(?:and|then|for|to|with|using)\b)[\p{L}-]+){0,3}\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b/iu;
 const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
@@ -61,6 +62,7 @@ export function shouldAutoRoute(prompt) {
   if (typeof prompt !== "string") return false;
   const text = prompt.trim();
   if (text.length < 16 || CASUAL.test(text)) return false;
+  if (SERVICE_DOCUMENT.test(text)) return false;
   for (const humanSubject of text.matchAll(HUMAN_TEST_SUBJECT)) {
     if (/\b(?:confidential|private|sensitive)\b/i.test(humanSubject[0])) return false;
     if (!/^\s+(?:api|endpoint|sdk|schema|database|code)\b/i.test(

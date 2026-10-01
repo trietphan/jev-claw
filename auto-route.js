@@ -229,6 +229,17 @@ export function automaticTaskSummary(prompt) {
   return `Software engineering request: ${category} for ${surface}; ${complexity}; ${risk}. Route using normal risk and complexity policy. Original task text withheld.`;
 }
 
+// Only a narrow debugging request has enough locally verifiable information
+// to enforce an abstracted Jev decision. Other categories remain guidance.
+function trustedAutomaticDecision(prompt, decision, signals) {
+  if (!/^\s*debug\s+\b/i.test(prompt) ||
+      /\b(auth|security|rbac|permissions?|payment|billing|migration|production|tenant|architecture|refactor|deploy)\b/i.test(prompt) ||
+      decision.task_type !== "debugging" || !["low", "medium"].includes(decision.risk)) return false;
+  const expectedRoute = signals.previous_attempts >= 4 && signals.test_status === "failing" ? "frontier"
+    : signals.previous_attempts >= 2 ? "claude-critic" : "debugger";
+  return decision.route === expectedRoute;
+}
+
 export function fallbackDecision(route, category = "jev_unavailable") {
   return {
     task_type: "implementation",
@@ -282,6 +293,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
     if (existing?.decision) return { appendSystemContext: routingContext(existing.decision) };
 
     const key = promptKey(event.prompt);
+    const signals = deriveRoutingSignals(event.prompt);
     const cached = cache.get(key);
     let decision;
     if (cached && cached.expiresAt > now()) {
@@ -290,7 +302,7 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       try {
         decision = {
           ...(await routeTask(
-            { task: automaticTaskSummary(event.prompt), ...deriveRoutingSignals(event.prompt) },
+            { task: automaticTaskSummary(event.prompt), ...signals },
             { timeoutMs: config.timeoutMs },
           )),
           source: "jev",
@@ -302,7 +314,11 @@ export function createAutomaticRouter({ api, routeTask = jevRoute, now = Date.no
       }
       cacheDecision(key, decision, now() + config.cacheTtlMs);
     }
-    writeRunDecision(ctx.runId, { decision, promptKey: key, sanitized: true, createdAt: now() });
+    writeRunDecision(ctx.runId, {
+      decision, promptKey: key, sanitized: true,
+      safeForEnforcement: trustedAutomaticDecision(event.prompt, decision, signals),
+      createdAt: now(),
+    });
     return { appendSystemContext: routingContext(decision) };
   }
 

@@ -244,10 +244,11 @@ Restart the Gateway after changing plugin configuration.
 
 - `guidance` (recommended first): injects the typed decision into host policy context. It never
   blocks a tool call.
-- `enforce`: currently behaves as guidance for automatically summarized prompts. Fixed labels
-  protect privacy but omit details needed to block a better-informed `sessions_spawn`; even a
-  high-confidence automatic recommendation fails open. The enforcement gate is retained only for
-  an explicitly trusted, context-complete decision (automatic routing never marks one trusted).
+- `enforce`: blocks a mismatched `sessions_spawn` only for a narrow debugging request whose
+  route is locally verifiable from explicit attempt and test-status signals and agrees with Jev.
+  Sensitive, mixed or uncertain tasks remain guidance, even with high Jev confidence: fixed
+  privacy-safe labels omit details that may justify a different agent. Legacy run decisions
+  without this explicit trust proof also fail open.
 
 The hook never runs for obvious greetings, writing-only requests, simple status/read/run commands,
 or prompts without both an engineering action and software context. The prefilter is intentionally

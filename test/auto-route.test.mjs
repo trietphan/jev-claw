@@ -457,8 +457,8 @@ test("timeout/error falls back to main, records sanitized warning, and never blo
   );
 });
 
-test("lossy automatic decisions stay guidance even in enforce mode", async () => {
-  const { router, runs } = harness(async () => decision({ route: "debugger", confidence: 0.91 }));
+test("only locally verified debugger decisions enforce agent choice", async () => {
+  const { router } = harness(async () => decision({ task_type: "debugging", route: "debugger", confidence: 0.91 }));
   const ctx = { runId: "run-4" };
   await router.beforePromptBuild(
     { prompt: "Debug the failing websocket test in the repository", messages: [] },
@@ -478,13 +478,8 @@ test("lossy automatic decisions stay guidance even in enforce mode", async () =>
     ctx,
     config,
   );
-  assert.equal(blocked, undefined);
-  runs.get("run-4:" + AUTO_ROUTE_NAMESPACE).safeForEnforcement = true;
-  const trustedBlock = router.beforeToolCall(
-    { toolName: "sessions_spawn", runId: "run-4", params: { agentId: "cheap" } }, ctx, config,
-  );
-  assert.equal(trustedBlock.block, true);
-  assert.match(trustedBlock.blockReason, /allows agentId=debugger/);
+  assert.equal(blocked.block, true);
+  assert.match(blocked.blockReason, /allows agentId=debugger/);
   assert.equal(
     router.beforeToolCall(
       { toolName: "exec", runId: "run-4", params: {} },
@@ -495,19 +490,31 @@ test("lossy automatic decisions stay guidance even in enforce mode", async () =>
   );
 });
 
-test("only explicitly trusted decisions enforce model and provider overrides", async () => {
-  const { router, runs, warnings } = harness(async () => decision({ route: "cheap", confidence: 0.91 }));
+test("sensitive and inconsistent automatic decisions fail open in enforce mode", async () => {
+  const cases = [
+    { prompt: "Debug the auth API bug", decision: decision({ task_type: "debugging", route: "debugger", confidence: 0.99 }) },
+    { prompt: "Debug the websocket bug", decision: decision({ task_type: "debugging", route: "cheap", confidence: 0.99 }) },
+    { prompt: "Implement RBAC permissions in the API", decision: decision({ task_type: "security", route: "reviewer", confidence: 0.99 }) },
+  ];
+  for (const [index, entry] of cases.entries()) {
+    const { router } = harness(async () => entry.decision);
+    const ctx = { runId: "unsafe-" + index };
+    await router.beforePromptBuild({ prompt: entry.prompt, messages: [] }, ctx, config);
+    assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", params: { agentId: "frontier" } }, ctx, config), undefined);
+  }
+});
+
+test("verified debugger decisions reject model and provider overrides", async () => {
+  const { router, warnings } = harness(async () => decision({ task_type: "debugging", route: "debugger", confidence: 0.91 }));
   const ctx = { runId: "run-model-override" };
-  await router.beforePromptBuild({ prompt: "Fix the checkout API code", messages: [] }, ctx, config);
-  assert.equal(router.beforeToolCall({ toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "cheap", provider: "anthropic" } }, ctx, config), undefined);
-  runs.get(ctx.runId + ":" + AUTO_ROUTE_NAMESPACE).safeForEnforcement = true;
+  await router.beforePromptBuild({ prompt: "Debug the failing websocket test in the repository", messages: [] }, ctx, config);
   for (const overrides of [
     { model: "anthropic/claude-opus-5" },
     { provider: "anthropic" },
     { modelFallbacksOverride: ["anthropic/claude-opus-5"] },
   ]) {
     const result = router.beforeToolCall(
-      { toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "cheap", ...overrides } },
+      { toolName: "sessions_spawn", runId: ctx.runId, params: { agentId: "debugger", ...overrides } },
       ctx,
       config,
     );

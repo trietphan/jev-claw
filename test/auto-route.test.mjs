@@ -72,8 +72,39 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Deploy the API service"), true);
   assert.equal(shouldAutoRoute("Implement a REST service for payments"), true);
   assert.equal(shouldAutoRoute("Build a web service for checkout"), true);
+  assert.equal(shouldAutoRoute("Test the REST service"), true);
+  assert.equal(shouldAutoRoute("Test a web service"), true);
+  assert.equal(shouldAutoRoute("Test the customer service"), false);
+  assert.equal(shouldAutoRoute("Test the REST service security policy"), false);
+  assert.equal(shouldAutoRoute("Test the HTTP service detailed documentation"), false);
+  assert.equal(shouldAutoRoute("Test the REST service for checkout"), true);
+  assert.equal(shouldAutoRoute("Implement a REST service with authentication"), true);
+  assert.equal(shouldAutoRoute("Deploy the HTTP service using Kubernetes"), true);
+  assert.equal(shouldAutoRoute("Test the REST service with Postman"), true);
+  assert.equal(shouldAutoRoute("Test the REST service with a confidential staff proposal"), false);
+  assert.equal(shouldAutoRoute("Test the REST service security"), false);
+  assert.equal(shouldAutoRoute("Write a REST service detailed documentation for the API endpoint"), false);
+  assert.equal(shouldAutoRoute("Build a web service to generate a summary"), true);
+  assert.equal(shouldAutoRoute("Write a REST service documentation generator in Python"), true);
+  assert.equal(shouldAutoRoute("Build a web service summary generator in TypeScript"), true);
+  assert.equal(shouldAutoRoute("Write a REST service plan, then implement the checkout API"), false);
+  for (const prompt of [
+    "Write a web service proposal for staff",
+    "Write a web service FAQ for staff",
+    "Write a REST service runbook for the checkout API",
+    "Write a web service proposal for the confidential layoff plan",
+    "Write a REST service annual confidential security compliance audit report",
+    "Write a web service monthly customer satisfaction survey summary",
+    "Test the REST service ISO 27001 compliance report",
+    "Test the HTTP service Q3 security policy",
+  ]) assert.equal(shouldAutoRoute(prompt), false, prompt);
   assert.equal(shouldAutoRoute("Write a microservice for checkout"), true);
   assert.equal(shouldAutoRoute("Write a web service policy for staff"), false);
+  for (const document of ["summary", "overview", "brief", "memo", "strategy", "analysis", "docs", "specification", "description"]) {
+    assert.equal(shouldAutoRoute(`Write a web service ${document} for staff`), false);
+    assert.equal(shouldAutoRoute(`Write a REST service ${document} for the checkout API`), false);
+    assert.equal(shouldAutoRoute(`Write a REST service detailed ${document} for the checkout API`), false);
+  }
   assert.equal(shouldAutoRoute("Review our customer service policy"), false);
   assert.equal(shouldAutoRoute("Run npm test in the repo"), false);
   assert.equal(shouldAutoRoute("Run npm test and fix failures in the repo"), true);
@@ -87,6 +118,10 @@ test("prefilter routes meaningful engineering work and skips casual/deterministi
   assert.equal(shouldAutoRoute("Write tests for candidates in the frontend team"), false);
   assert.equal(shouldAutoRoute("Write tests for our confidential candidates in the frontend team"), false);
   assert.equal(shouldAutoRoute("Write tests for new prospective employees in the backend team"), false);
+  assert.equal(shouldAutoRoute("Write tests for the new backend junior senior candidates"), false);
+  assert.equal(shouldAutoRoute("Write tests for the new remote junior backend engineering candidates"), false);
+  assert.equal(shouldAutoRoute("Write tests for the frontend registration workflow used by candidates"), true);
+  assert.equal(shouldAutoRoute("Write tests for our frontend component library used by the team"), true);
   assert.equal(shouldAutoRoute("Write tests for our confidential employee API"), false);
   assert.equal(shouldAutoRoute("Write tests for the employee API"), true);
   assert.equal(shouldAutoRoute("Write tests for the candidates endpoint"), true);

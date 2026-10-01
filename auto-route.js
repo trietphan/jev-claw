@@ -16,7 +16,7 @@ const WRITING_ONLY =
 const CODE_GENERATION =
   /^\s*(write|viết)\b(?=.*\b(code|typescript|javascript|python|function|class|module|component|plugin|hook|api\s+endpoint|mã nguồn)\b)/i;
 const DIRECT_WRITE_CODE = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin|api\s+endpoint|mã nguồn)\b/i;
-const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?!\s+(?:policy|plan|guide|report|documentation)\b)/i;
+const DIRECT_SOFTWARE_SERVICE = /^\s*(?:implement|build|fix|debug|refactor|deploy|design|migrate|update|test|write)\s+(?:(?:a|an|the)\s+)?(?:(?:rest|web|http|grpc)\s+services?|microservices?)\b(?!\s+(?:policy|plan|guide|report|documentation|docs?|summary|overview|brief|memo|strategy|analysis|spec(?:ification)?|description|writeup)\b)/i;
 const CODE_TO_GENERATE_DOCUMENT = /^\s*(?:write|viết)\s+(?:(?:a|an|the)\s+)?(?:(?:typescript|javascript|python|react)\s+)?(?:code|function|class|component|module|plugin)\s+(?:(?:to|that|which)\s+)(?:generat(?:e|es)|creat(?:e|es)|produc(?:e|es)|writ(?:e|es))\b/i;
 const TEST_CONTINUATION_CONTEXT =
   /\b(code|codebase|repo(?:sitory)?|api|sdk|cli|bug|auth|typescript|javascript|python|react|database|schema|migration|frontend|backend|endpoint|plugin|hook|ci|lint|typecheck|websocket)\b/i;
@@ -101,7 +101,7 @@ export function shouldAutoRoute(prompt) {
   const codeGeneration = (CODE_GENERATION.test(text) && DISTINCT_SOFTWARE_CONTEXT.test(text)) || testGeneration || (WRITING_ONLY.test(text) && softwareService);
   if (WRITING_ONLY.test(text) && !codeGeneration && !ENGINEERING_ACTION.test(text.replace(WRITING_ONLY, ""))) return false;
   const firstAction = text.match(ENGINEERING_ACTION)?.[0]?.toLowerCase();
-  if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text)) return false;
+  if ((firstAction === "test" || firstAction === "kiểm tra") && !testGeneration && !DISTINCT_SOFTWARE_CONTEXT.test(text) && !softwareService) return false;
   return (ENGINEERING_ACTION.test(text) || codeGeneration) && (SOFTWARE_CONTEXT.test(text) || testGeneration || softwareService);
 }
 
